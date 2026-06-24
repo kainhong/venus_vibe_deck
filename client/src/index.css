@@ -238,20 +238,39 @@ textarea {
   border-radius: 14px;
   display: grid;
   place-items: center;
-  font-size: 22px;
   transition: transform 0.1s;
+}
+
+.more-panel-icon img {
+  width: 24px;
+  height: 24px;
 }
 
 .more-panel-icon.paste {
   background: #fff3e0;
+  color: #e65100;
+}
+
+.more-panel-icon.paste img {
+  filter: invert(27%) sepia(90%) saturate(2000%) hue-rotate(15deg) brightness(90%);
 }
 
 .more-panel-icon.keyboard {
   background: #e3f2fd;
+  color: #1565c0;
+}
+
+.more-panel-icon.keyboard img {
+  filter: invert(25%) sepia(80%) saturate(1200%) hue-rotate(200deg) brightness(85%);
 }
 
 .more-panel-icon.keyboard.active {
   background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.more-panel-icon.keyboard.active img {
+  filter: invert(35%) sepia(60%) saturate(800%) hue-rotate(100deg) brightness(85%);
 }
 
 .more-panel-label {
@@ -348,8 +367,12 @@ textarea {
   border-color: var(--accent);
 }
 
+.action-btn.backspace {
+  flex: 0 0 64px;
+}
+
 .action-btn.confirm {
-  flex: 0 0 72px;
+  flex: 0 0 64px;
 }
 
 .action-btn.voice img {

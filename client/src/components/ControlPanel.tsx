@@ -2,6 +2,9 @@ import { useState } from 'react';
 import enterIcon from '../asserts/icons/enter.svg';
 import arrowIcon from '../asserts/icons/to_left.svg';
 import voiceIcon from '../asserts/icons/voice.svg';
+import pasteIcon from '../asserts/icons/paste.svg';
+import keyboardIcon from '../asserts/icons/keyboard.svg';
+import backspaceIcon from '../asserts/icons/backspace.svg';
 
 const TOP_CONTROLS = [
   { id: 'up', icon: arrowIcon, iconClass: 'rotate-up', data: '\x1b[A', label: '上移' },
@@ -26,6 +29,7 @@ const TOOL_CONTROLS = [
 const ACTION_CONTROLS = [
   { id: 'escape', glyph: 'esc', data: '\x1b', label: 'Esc' },
   { id: 'voice', icon: voiceIcon, label: '语音输入' },
+  { id: 'backspace', icon: backspaceIcon, data: '\x7f', label: '退格' },
   { id: 'confirm', icon: enterIcon, data: '\r', label: '确认' },
 ] as const;
 
@@ -50,7 +54,7 @@ export function ControlPanel({ onKey, onVoice, keyboardEnabled, onToggleKeyboard
             type="button"
             onPointerDown={(e) => { e.preventDefault(); onPaste(); setShowMore(false); }}
           >
-            <span className="more-panel-icon paste">📋</span>
+            <span className="more-panel-icon paste"><img src={pasteIcon} alt="" aria-hidden /></span>
             <span className="more-panel-label">粘贴</span>
           </button>
           <button
@@ -58,7 +62,7 @@ export function ControlPanel({ onKey, onVoice, keyboardEnabled, onToggleKeyboard
             type="button"
             onPointerDown={(e) => { e.preventDefault(); onToggleKeyboard(); setShowMore(false); }}
           >
-            <span className={`more-panel-icon keyboard ${keyboardEnabled ? 'active' : ''}`}>⌨️</span>
+            <span className={`more-panel-icon keyboard ${keyboardEnabled ? 'active' : ''}`}><img src={keyboardIcon} alt="" aria-hidden /></span>
             <span className="more-panel-label">{keyboardEnabled ? '关闭键盘' : '开启键盘'}</span>
           </button>
         </div>
