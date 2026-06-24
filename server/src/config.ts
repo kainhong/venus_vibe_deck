@@ -3,6 +3,8 @@
  * PTY_COMMAND 可切换挂载的进程(默认 bash,可设为 claude)。
  */
 export const config = {
+  /** Server log level: debug, info, warn, error, silent */
+  logLevel: process.env.LOG_LEVEL ?? 'info',
   /** HTTP/WS 监听端口 */
   port: Number(process.env.PORT ?? 8001),
   /** 监听地址,0.0.0.0 暴露到局域网 */

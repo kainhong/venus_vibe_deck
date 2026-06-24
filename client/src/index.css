@@ -88,6 +88,17 @@ textarea {
   white-space: nowrap;
 }
 
+.status-text.bell {
+  color: var(--ok);
+  font-weight: 650;
+  animation: bell-status-pop 0.24s ease-out;
+}
+
+@keyframes bell-status-pop {
+  from { opacity: 0.55; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .session-select {
   flex: 1;
   min-width: 0;

@@ -1,6 +1,9 @@
 import type { WebSocket, RawData } from 'ws';
 import type { SessionManager } from '../session/SessionManager.js';
 import type { ClientMessage, ServerMessage } from '../protocol.js';
+import { createLogger } from '../logger.js';
+
+const logger = createLogger('ws');
 
 /**
  * 单个客户端连接:绑定到一个会话,路由消息。
@@ -17,11 +20,28 @@ export class ClientConnection {
     private readonly ws: WebSocket,
     private readonly manager: SessionManager,
   ) {
+    logger.info('websocket connected');
     this.unsubscribeManager = manager.onEvent((event) => {
       if (event.type === 'session_destroyed') {
         if (this.currentSessionId === event.sessionId) this.detach();
         this.send({ type: 'session_destroyed', sessionId: event.sessionId });
         this.send({ type: 'session_list', sessions: event.sessions });
+      }
+      if (event.type === 'notification') {
+        if (!event.sessionId || event.sessionId === this.currentSessionId) {
+          this.send({
+            type: 'terminal_bell',
+            sessionId: event.sessionId,
+            at: event.at,
+            source: event.source,
+            message: event.message,
+          });
+          logger.info('notification sent to websocket', {
+            sessionId: event.sessionId,
+            currentSessionId: this.currentSessionId,
+            source: event.source,
+          });
+        }
       }
     });
     ws.on('message', (raw) => this.onMessage(raw));
@@ -32,6 +52,9 @@ export class ClientConnection {
   private send(msg: ServerMessage): void {
     if (this.ws.readyState === this.ws.OPEN) {
       this.ws.send(JSON.stringify(msg));
+      if (msg.type === 'terminal_bell') {
+        logger.debug('terminal bell sent', { sessionId: msg.sessionId, source: msg.source });
+      }
     }
   }
 
@@ -40,10 +63,12 @@ export class ClientConnection {
     this.detach();
     const session = this.manager.get(sessionId);
     if (!session) {
+      logger.warn('attach failed: session not found', { sessionId });
       this.send({ type: 'error', message: `session not found: ${sessionId}` });
       return;
     }
     this.currentSessionId = sessionId;
+    logger.info('websocket attached to session', { sessionId });
     // 回放已有输出,确保客户端能看到连接前的内容
     const scrollback = session.getScrollback();
     if (scrollback) this.send({ type: 'terminal_out', sessionId, data: scrollback });
@@ -58,6 +83,7 @@ export class ClientConnection {
   }
 
   private close(): void {
+    logger.info('websocket closed', { currentSessionId: this.currentSessionId });
     this.detach();
     this.unsubscribeManager?.();
     this.unsubscribeManager = undefined;
@@ -76,6 +102,7 @@ export class ClientConnection {
     try {
       msg = JSON.parse(raw.toString()) as ClientMessage;
     } catch {
+      logger.warn('invalid websocket json');
       this.send({ type: 'error', message: 'invalid JSON' });
       return;
     }
@@ -84,10 +111,12 @@ export class ClientConnection {
       // input 消息携带 sessionId,校验后写入
       const session = this.manager.get(msg.sessionId);
       if (!session) {
+        logger.warn('input rejected: session not found', { sessionId: msg.sessionId });
         this.send({ type: 'error', message: `session not found: ${msg.sessionId}` });
         return;
       }
       this.currentSessionId = msg.sessionId;
+      logger.debug('pty input received', { sessionId: msg.sessionId, bytes: msg.data.length });
       session.write(msg.data);
       return;
     }
@@ -95,6 +124,7 @@ export class ClientConnection {
     if (msg.action === 'resize') {
       // 同步终端尺寸到 PTY,使输出按真实 cols/rows 排版(换行/TUI 布局)
       this.manager.get(msg.sessionId)?.resize(msg.cols, msg.rows);
+      logger.debug('pty resize received', { sessionId: msg.sessionId, cols: msg.cols, rows: msg.rows });
       return;
     }
 
@@ -102,6 +132,7 @@ export class ClientConnection {
     switch (msg.command) {
       case 'hello': {
         const sessions = this.manager.list();
+        logger.debug('hello received', { targetSessionId: msg.targetSessionId, sessionCount: sessions.length });
         this.send({ type: 'session_list', sessions });
         const target = this.resolveSessionId(msg.targetSessionId) ?? this.currentSessionId ?? sessions[0]?.id;
         if (target) this.attach(target);
@@ -124,6 +155,7 @@ export class ClientConnection {
           this.attach(session.id);
           this.send({ type: 'session_list', sessions: this.manager.list() });
         } catch (err) {
+          logger.error('create session failed', { err: err as Error });
           // cwd 无效/命令不存在等 spawn 失败 → 告知客户端而非抛断连接
           this.send({ type: 'error', message: `create session failed: ${(err as Error).message}` });
         }
@@ -132,12 +164,16 @@ export class ClientConnection {
       case 'switch_session': {
         const target = this.resolveSessionId(msg.targetSessionId);
         if (target) this.attach(target);
-        else this.send({ type: 'error', message: `session not found: ${msg.targetSessionId}` });
+        else {
+          logger.warn('switch session failed: target not found', { targetSessionId: msg.targetSessionId });
+          this.send({ type: 'error', message: `session not found: ${msg.targetSessionId}` });
+        }
         break;
       }
       case 'destroy_session': {
         const destroyed = this.manager.destroy(msg.sessionId);
         if (!destroyed) {
+          logger.warn('destroy session failed: session not found', { sessionId: msg.sessionId });
           this.send({ type: 'error', message: `session not found: ${msg.sessionId}` });
         }
         break;

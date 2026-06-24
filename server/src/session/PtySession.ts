@@ -2,6 +2,9 @@ import { spawn, type IPty } from 'node-pty';
 import { randomUUID } from 'node:crypto';
 import { config } from '../config.js';
 import type { SessionInfo } from '../protocol.js';
+import { createLogger } from '../logger.js';
+
+const logger = createLogger('pty');
 
 export interface PtySessionOptions {
   command?: string;
@@ -45,13 +48,20 @@ export class PtySession {
     }
     // 强制 TERM 兼容,确保 ANSI/256 色正确还原
     env.TERM = env.TERM ?? 'xterm-256color';
+    env.VENUS_SESSION_ID = this.id;
+    env.VENUS_NOTIFICATION_URL = `http://127.0.0.1:${config.port}/api/notification`;
 
-    this.pty = spawn(opts.command ?? config.defaultCommand, opts.args ?? config.defaultArgs, {
+    const command = opts.command ?? config.defaultCommand;
+    const args = opts.args ?? config.defaultArgs;
+    const cwd = opts.cwd ?? process.env.HOME ?? process.cwd();
+    logger.info('pty spawn', { sessionId: this.id, name: this.name, command, args, cwd });
+
+    this.pty = spawn(command, args, {
       name: 'xterm-256color',
       cols: opts.cols ?? config.cols,
       rows: opts.rows ?? config.rows,
       // 优先 workspace,缺失回退(向后兼容 ensureDefault 的默认 bash)
-      cwd: opts.cwd ?? process.env.HOME ?? process.cwd(),
+      cwd,
       env,
     });
 
@@ -61,6 +71,7 @@ export class PtySession {
     });
     this.pty.onExit(({ exitCode, signal }) => {
       this.alive = false;
+      logger.info('pty exited', { sessionId: this.id, name: this.name, exitCode, signal });
       for (const cb of this.exitListeners) cb({ exitCode, signal });
     });
   }
@@ -103,6 +114,7 @@ export class PtySession {
    */
   destroy(): void {
     this.alive = false;
+    logger.info('pty destroy requested', { sessionId: this.id, name: this.name, pid: this.pty.pid });
     try {
       process.kill(-this.pty.pid, 'SIGKILL');
     } catch {

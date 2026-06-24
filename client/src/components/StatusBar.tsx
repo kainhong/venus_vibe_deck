@@ -9,12 +9,13 @@ interface StatusBarProps {
   onNew: () => void;
   onSettings: () => void;
   onCloseCurrent: () => void;
+  bellActive?: boolean;
 }
 
 /**
  * 顶部状态栏:连接状态 + Session 下拉 + 常用会话操作。
  */
-export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onSettings, onCloseCurrent }: StatusBarProps) {
+export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onSettings, onCloseCurrent, bellActive = false }: StatusBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -35,7 +36,7 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
   return (
     <header className="status-bar">
       <span className={`status-dot ${connected ? 'on' : 'off'}`} aria-hidden />
-      <span className="status-text">{connected ? '已连接' : '断开'}</span>
+      <span className={`status-text${bellActive ? ' bell' : ''}`}>{bellActive ? '已完成' : connected ? '已连接' : '断开'}</span>
 
       <select
         className="session-select"

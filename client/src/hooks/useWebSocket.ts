@@ -54,6 +54,9 @@ export interface WebSocketApi {
   connected: boolean;
   sessions: SessionInfo[];
   currentSessionId: string | undefined;
+  lastBellAt: number | undefined;
+  lastBellMessage: string | undefined;
+  lastBellSource: string | undefined;
   sendInput: (data: string) => void;
   sendResize: (cols: number, rows: number) => void;
   switchSession: (id: string) => void;
@@ -81,6 +84,9 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
   const [connected, setConnected] = useState(false);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(undefined);
+  const [lastBellAt, setLastBellAt] = useState<number | undefined>(undefined);
+  const [lastBellMessage, setLastBellMessage] = useState<string | undefined>(undefined);
+  const [lastBellSource, setLastBellSource] = useState<string | undefined>(undefined);
   currentRef.current = currentSessionId;
   sessionsRef.current = sessions;
 
@@ -109,6 +115,13 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
       switch (msg.type) {
         case 'terminal_out':
           if (msg.sessionId === currentRef.current) onDataRef.current(msg.data);
+          break;
+        case 'terminal_bell':
+          if (!msg.sessionId || msg.sessionId === currentRef.current) {
+            setLastBellAt(msg.at);
+            setLastBellMessage(msg.message);
+            setLastBellSource(msg.source);
+          }
           break;
         case 'session_list':
           sessionsRef.current = msg.sessions;
@@ -208,6 +221,9 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
     connected,
     sessions,
     currentSessionId,
+    lastBellAt,
+    lastBellMessage,
+    lastBellSource,
     sendInput,
     sendResize,
     switchSession,

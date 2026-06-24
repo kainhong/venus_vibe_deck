@@ -1,8 +1,12 @@
 import { PtySession, type PtySessionOptions } from './PtySession.js';
 import type { SessionInfo } from '../protocol.js';
+import { createLogger } from '../logger.js';
+
+const logger = createLogger('session-manager');
 
 export type SessionManagerEvent =
-  | { type: 'session_destroyed'; sessionId: string; sessions: SessionInfo[] };
+  | { type: 'session_destroyed'; sessionId: string; sessions: SessionInfo[] }
+  | { type: 'notification'; sessionId?: string; at: number; source?: string; message?: string };
 
 /**
  * 会话管理器:维护 SessionID → PtySession 映射。
@@ -28,6 +32,13 @@ export class SessionManager {
   create(opts: PtySessionOptions = {}): PtySession {
     const session = new PtySession(opts);
     this.sessions.set(session.id, session);
+    logger.info('session created', {
+      sessionId: session.id,
+      name: session.name,
+      command: opts.command,
+      args: opts.args,
+      cwd: opts.cwd,
+    });
     session.onExit(() => {
       this.remove(session.id, false);
     });
@@ -49,6 +60,7 @@ export class SessionManager {
     this.sessions.delete(id);
     if (this.defaultId === id) this.defaultId = undefined;
     if (kill) session.destroy();
+    logger.info('session removed', { sessionId: id, name: session.name, killed: kill });
     this.emit({ type: 'session_destroyed', sessionId: id, sessions: this.list() });
     return true;
   }
@@ -67,6 +79,12 @@ export class SessionManager {
   onEvent(listener: (event: SessionManagerEvent) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  notify(event: { sessionId?: string; source?: string; message?: string }): void {
+    const payload = { type: 'notification' as const, at: Date.now(), ...event };
+    logger.info('notification broadcast', payload);
+    this.emit(payload);
   }
 
   private emit(event: SessionManagerEvent): void {

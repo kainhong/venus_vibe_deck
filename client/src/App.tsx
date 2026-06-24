@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWebSocket, type CreateSessionOptions } from './hooks/useWebSocket';
 import { useApp } from './state/AppContext';
 import { TerminalView, type TerminalWriter } from './components/Terminal';
@@ -25,6 +25,8 @@ export default function App() {
   const [view, setView] = useState<View>('terminal');
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
   const [immersive, setImmersive] = useState(false);
+  const [bellActive, setBellActive] = useState(false);
+  const pendingHiddenBellRef = useRef(false);
   const [immersiveVoicePoint, setImmersiveVoicePoint] = useState<{ x: number; y: number } | null>(null);
   const immersivePressTimerRef = useRef<number | undefined>(undefined);
   const immersiveLongPressRef = useRef(false);
@@ -46,6 +48,32 @@ export default function App() {
     onResult: handleSpeechResult,
     onError: (message) => alert(message),
   });
+
+  useEffect(() => {
+    if (!api.lastBellAt) return;
+    if (document.visibilityState === 'hidden') {
+      pendingHiddenBellRef.current = true;
+      return;
+    }
+    setBellActive(true);
+    navigator.vibrate?.(80);
+    const timer = window.setTimeout(() => {
+      setBellActive(false);
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, [api.lastBellAt]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== 'visible' || !pendingHiddenBellRef.current) return;
+      pendingHiddenBellRef.current = false;
+      setBellActive(true);
+      navigator.vibrate?.(80);
+      window.setTimeout(() => setBellActive(false), 1800);
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, []);
 
   const handlePaste = useCallback(async () => {
     try {
@@ -138,6 +166,7 @@ export default function App() {
         onNew={() => setView('newSession')}
         onSettings={() => setView('settings')}
         onCloseCurrent={closeCurrent}
+        bellActive={bellActive}
       />
 
       <main className="terminal-area">
