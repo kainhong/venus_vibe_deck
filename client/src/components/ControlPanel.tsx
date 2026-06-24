@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import enterIcon from '../asserts/icons/enter.svg';
 import arrowIcon from '../asserts/icons/to_left.svg';
 import voiceIcon from '../asserts/icons/voice.svg';
 import pasteIcon from '../asserts/icons/paste.svg';
 import keyboardIcon from '../asserts/icons/keyboard.svg';
 import backspaceIcon from '../asserts/icons/backspace.svg';
+import { useBrowserSpeechRecognition, type SpeechResult } from '../hooks/useBrowserSpeechRecognition';
+
+const LONG_PRESS_MS = 220;
 
 const TOP_CONTROLS = [
   { id: 'up', icon: arrowIcon, iconClass: 'rotate-up', data: '\x1b[A', label: '上移' },
@@ -35,7 +38,7 @@ const ACTION_CONTROLS = [
 
 interface ControlPanelProps {
   onKey: (data: string) => void;
-  onVoice?: () => void;
+  onVoice?: (result: SpeechResult) => void;
   keyboardEnabled: boolean;
   onToggleKeyboard: () => void;
   onPaste: () => void;
@@ -43,7 +46,51 @@ interface ControlPanelProps {
 
 export function ControlPanel({ onKey, onVoice, keyboardEnabled, onToggleKeyboard, onPaste }: ControlPanelProps) {
   const [showMore, setShowMore] = useState(false);
-  const handleVoice = onVoice ?? (() => alert('语音输入开发中'));
+  const voicePressTimerRef = useRef<number | undefined>(undefined);
+  const voiceLongPressRef = useRef(false);
+  const handleSpeechResult = (result: SpeechResult) => {
+    if (onVoice) {
+      onVoice(result);
+      return;
+    }
+    if (result.type === 'text') onKey(result.message);
+  };
+  const speech = useBrowserSpeechRecognition({
+    lang: 'zh-CN',
+    submitMode: 'insert',
+    onResult: handleSpeechResult,
+    onError: (message) => alert(message),
+  });
+
+  const clearVoicePressTimer = () => {
+    if (voicePressTimerRef.current !== undefined) {
+      window.clearTimeout(voicePressTimerRef.current);
+      voicePressTimerRef.current = undefined;
+    }
+  };
+
+  const startVoicePress = () => {
+    if (!speech.supported) {
+      alert('当前浏览器不支持本地语音识别');
+      return;
+    }
+    voiceLongPressRef.current = false;
+    clearVoicePressTimer();
+    voicePressTimerRef.current = window.setTimeout(() => {
+      voiceLongPressRef.current = true;
+      speech.start();
+    }, LONG_PRESS_MS);
+  };
+
+  const endVoicePress = () => {
+    clearVoicePressTimer();
+    if (voiceLongPressRef.current) {
+      speech.stop();
+      voiceLongPressRef.current = false;
+      return;
+    }
+    speech.toggle();
+  };
 
   return (
     <div className="control-panel">
@@ -92,12 +139,32 @@ export function ControlPanel({ onKey, onVoice, keyboardEnabled, onToggleKeyboard
             type="button"
             onPointerDown={(e) => {
               e.preventDefault();
-              if (k.id === 'voice') handleVoice();
+              if (k.id === 'voice') startVoicePress();
               else if ('data' in k) onKey(k.data);
             }}
+            onPointerUp={(e) => {
+              if (k.id !== 'voice') return;
+              e.preventDefault();
+              endVoicePress();
+            }}
+            onPointerCancel={() => {
+              if (k.id !== 'voice') return;
+              clearVoicePressTimer();
+              if (voiceLongPressRef.current) speech.stop();
+              voiceLongPressRef.current = false;
+            }}
             aria-label={k.label}
+            aria-pressed={k.id === 'voice' ? speech.listening : undefined}
+            disabled={k.id === 'voice' && !speech.supported}
           >
-            {'glyph' in k ? k.glyph : <img src={k.icon} alt="" aria-hidden />}
+            {'glyph' in k ? (
+              k.glyph
+            ) : (
+              <>
+                <img src={k.icon} alt="" aria-hidden />
+                {k.id === 'voice' && <span>{speech.listening ? '听写中' : speech.state === 'processing' ? '识别中' : '语音'}</span>}
+              </>
+            )}
           </button>
         ))}
       </div>

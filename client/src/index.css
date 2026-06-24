@@ -365,6 +365,13 @@ textarea {
   flex: 1;
   background: var(--accent);
   border-color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .action-btn.backspace {
@@ -378,6 +385,25 @@ textarea {
 .action-btn.voice img {
   filter: brightness(0) invert(1);
   opacity: 1;
+  flex: 0 0 auto;
+}
+
+.action-btn.voice[aria-pressed='true'] {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.action-btn.voice[aria-pressed='true'] img {
+  filter: brightness(0) invert(1);
+}
+
+.action-btn.voice span {
+  line-height: 1;
+}
+
+.action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .action-btn img {
