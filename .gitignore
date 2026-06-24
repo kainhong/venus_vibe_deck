@@ -3,3 +3,16 @@
 node_modules
 dist
 build
+
+# Env / local
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

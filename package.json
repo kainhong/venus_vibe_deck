@@ -1,0 +1,21 @@
+{
+  "name": "venus-agent-hube",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "移动端 AI 编程 HUD — 把手机变成服务器端 AI Agent 的物理控制面板",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n client,server -c magenta,green \"npm:watch:client\" \"npm:dev:server\"",
+    "dev:server": "npm run dev -w @venus/server",
+    "watch:client": "npm run build:watch -w @venus/client",
+    "build": "npm run build -w @venus/server && npm run build -w @venus/client",
+    "start": "npm run start -w @venus/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

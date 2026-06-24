@@ -1,0 +1,538 @@
+:root {
+  --bg: #0b0b0f;
+  --bg-panel: #14141b;
+  --bg-elev: #1c1c24;
+  --fg: #e6e6e6;
+  --fg-dim: #8a8a96;
+  --accent: #3b82f6;
+  --accent-strong: #2563eb;
+  --danger: #ef4444;
+  --ok: #22c55e;
+  --border: #2c2c38;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* 移动端:禁止选中文本/长按菜单,避免误触 */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  /* 禁止双指缩放 */
+  touch-action: manipulation;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* 表单输入框允许键盘输入(spec-ui §3:仅 terminal 区将来禁键盘) */
+input,
+select,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 三段布局:状态栏 / 终端区 / 控制面板 — 用 dvh 适配移动端动态视口 */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ── 顶部状态栏 (~10%) ── */
+.status-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid #23232e;
+  min-height: 44px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot.on {
+  background: var(--ok);
+  box-shadow: 0 0 6px var(--ok);
+}
+.status-dot.off {
+  background: var(--danger);
+}
+
+.status-text {
+  font-size: 13px;
+  color: var(--fg-dim);
+}
+
+.session-select {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+.session-meta {
+  font-size: 11px;
+  color: var(--fg-dim);
+  font-family: ui-monospace, monospace;
+}
+
+/* 菜单 */
+.menu-wrap {
+  position: relative;
+}
+.menu-btn {
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-btn:disabled {
+  opacity: 0.4;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 180px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+}
+.menu-item {
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-item:active {
+  background: var(--accent);
+}
+.menu-item.danger {
+  color: var(--danger);
+}
+.menu-item:disabled {
+  color: var(--fg-dim);
+  opacity: 0.5;
+}
+
+/* ── 中部终端区 (flex 1) ── */
+.terminal-area {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+  padding: 6px;
+}
+
+.terminal-container {
+  width: 100%;
+  height: 100%;
+}
+
+.terminal-container .xterm {
+  padding: 4px;
+  height: 100%;
+}
+
+/* ── 底部控制栏:单行紧凑,纯图标 ── */
+.control-panel {
+  flex: 0 0 auto;
+  background: var(--bg-panel);
+  border-top: 1px solid #23232e;
+  padding: 10px;
+}
+.control-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.ctrl-btn {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 24px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background 0.08s, transform 0.08s;
+}
+.ctrl-btn:active {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(0.95);
+}
+/* 中断/拒绝:红色提示破坏性 */
+.ctrl-btn.danger {
+  color: var(--danger);
+}
+.ctrl-btn.danger:active {
+  background: var(--danger);
+  color: #fff;
+}
+/* 语音入口:强调色 + 略宽(flex 1.5),作为主输入(本次占位) */
+.ctrl-btn.voice {
+  flex: 1.5;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-size: 22px;
+}
+.ctrl-btn.voice:active {
+  background: var(--accent-strong);
+}
+
+/* ── 模态(设置 / 新建会话)── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--bg-panel);
+  width: 100%;
+  max-width: 560px;
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  /* 内部滚动,避免被软键盘遮挡 */
+  overflow: hidden;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #23232e;
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #23232e;
+}
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── 表单通用 ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--fg-dim);
+}
+.field input,
+.field select {
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+}
+.field.checkbox,
+.field.radio,
+.checkbox,
+.radio {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+  cursor: pointer;
+}
+.hint {
+  color: var(--fg-dim);
+  font-size: 12px;
+}
+.required {
+  color: var(--danger);
+  font-style: normal;
+}
+
+/* ── 按钮 ── */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+}
+.btn-secondary {
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-text {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-text.danger {
+  color: var(--danger);
+}
+
+/* ── 设置页:CliConfig 列表 ── */
+.config-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.config-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.config-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.config-name {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.default-tag {
+  font-size: 10px;
+  font-style: normal;
+  color: var(--ok);
+  background: rgba(34, 197, 94, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.config-cmd {
+  font-size: 12px;
+  color: var(--fg-dim);
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}
+.config-resume {
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.config-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.config-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.config-editor h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.empty-hint {
+  color: var(--fg-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 12px;
+  list-style: none;
+}
+
+/* ── workspace 选择器 ── */
+.workspace-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ws-input {
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: ui-monospace, monospace;
+}
+.ws-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.ws-label {
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+.chip {
+  background: var(--bg-elev);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.ws-browse-btn {
+  align-self: flex-start;
+}
+.ws-browser {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ws-browser-path {
+  font-size: 12px;
+  color: var(--fg-dim);
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}
+.ws-error {
+  font-size: 12px;
+  color: var(--danger);
+}
+.ws-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ws-entry {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+.ws-entry:active {
+  background: var(--bg-elev);
+}
+.ws-browser-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
