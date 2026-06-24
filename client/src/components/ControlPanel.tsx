@@ -1,4 +1,3 @@
-import cancelIcon from '../asserts/icons/cancel.svg';
 import enterIcon from '../asserts/icons/enter.svg';
 import arrowIcon from '../asserts/icons/to_left.svg';
 import voiceIcon from '../asserts/icons/voice.svg';
@@ -28,7 +27,7 @@ const TOOL_CONTROLS = [
 ] as const;
 
 const ACTION_CONTROLS = [
-  { id: 'interrupt', icon: cancelIcon, data: '\x03', label: '中断' },
+  { id: 'escape', glyph: 'esc', data: '\x1b', label: 'Esc' },
   { id: 'voice', icon: voiceIcon, label: '语音输入' },
   { id: 'confirm', icon: enterIcon, data: '\r', label: '确认' },
 ] as const;
@@ -64,7 +63,7 @@ export function ControlPanel({ onKey, onVoice }: ControlPanelProps) {
         {ACTION_CONTROLS.map((k) => (
           <button
             key={k.id}
-            className={`action-btn ${k.id}${k.id === 'interrupt' ? ' danger' : ''}`}
+            className={`action-btn ${k.id}${k.id === 'escape' ? ' danger' : ''}`}
             type="button"
             onPointerDown={(e) => {
               e.preventDefault();
@@ -73,7 +72,7 @@ export function ControlPanel({ onKey, onVoice }: ControlPanelProps) {
             }}
             aria-label={k.label}
           >
-            <img src={k.icon} alt="" aria-hidden />
+            {'glyph' in k ? k.glyph : <img src={k.icon} alt="" aria-hidden />}
           </button>
         ))}
       </div>

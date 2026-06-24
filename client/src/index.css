@@ -273,8 +273,12 @@ textarea {
   transition: transform 0.08s, background 0.08s;
 }
 
-.action-btn.interrupt {
+.action-btn.escape {
   flex: 0 0 64px;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .action-btn.voice {

@@ -11,14 +11,22 @@ import type { ClientMessage, ServerMessage } from '../protocol.js';
 export class ClientConnection {
   private currentSessionId: string | undefined;
   private unsubscribe: (() => void) | undefined;
+  private unsubscribeManager: (() => void) | undefined;
 
   constructor(
     private readonly ws: WebSocket,
     private readonly manager: SessionManager,
   ) {
+    this.unsubscribeManager = manager.onEvent((event) => {
+      if (event.type === 'session_destroyed') {
+        if (this.currentSessionId === event.sessionId) this.detach();
+        this.send({ type: 'session_destroyed', sessionId: event.sessionId });
+        this.send({ type: 'session_list', sessions: event.sessions });
+      }
+    });
     ws.on('message', (raw) => this.onMessage(raw));
-    ws.on('close', () => this.detach());
-    ws.on('error', () => this.detach());
+    ws.on('close', () => this.close());
+    ws.on('error', () => this.close());
   }
 
   private send(msg: ServerMessage): void {
@@ -47,6 +55,12 @@ export class ClientConnection {
   private detach(): void {
     this.unsubscribe?.();
     this.unsubscribe = undefined;
+  }
+
+  private close(): void {
+    this.detach();
+    this.unsubscribeManager?.();
+    this.unsubscribeManager = undefined;
   }
 
   private resolveSessionId(token: string | undefined): string | undefined {
@@ -123,11 +137,7 @@ export class ClientConnection {
       }
       case 'destroy_session': {
         const destroyed = this.manager.destroy(msg.sessionId);
-        if (destroyed) {
-          if (this.currentSessionId === msg.sessionId) this.detach();
-          this.send({ type: 'session_destroyed', sessionId: msg.sessionId });
-          this.send({ type: 'session_list', sessions: this.manager.list() });
-        } else {
+        if (!destroyed) {
           this.send({ type: 'error', message: `session not found: ${msg.sessionId}` });
         }
         break;

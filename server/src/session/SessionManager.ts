@@ -1,15 +1,18 @@
 import { PtySession, type PtySessionOptions } from './PtySession.js';
 import type { SessionInfo } from '../protocol.js';
 
+export type SessionManagerEvent =
+  | { type: 'session_destroyed'; sessionId: string; sessions: SessionInfo[] };
+
 /**
  * 会话管理器:维护 SessionID → PtySession 映射。
- * - 启动时确保存在一个默认会话
  * - create/get/destroy/list
- * - 会话进程退出后保留条目(标记 not alive),供前端展示
+ * - 会话进程退出后移除条目,并通知客户端刷新列表
  */
 export class SessionManager {
   private readonly sessions = new Map<string, PtySession>();
   private defaultId?: string;
+  private readonly listeners = new Set<(event: SessionManagerEvent) => void>();
 
   /** 确保默认会话存在并返回它 */
   ensureDefault(): PtySession {
@@ -25,6 +28,9 @@ export class SessionManager {
   create(opts: PtySessionOptions = {}): PtySession {
     const session = new PtySession(opts);
     this.sessions.set(session.id, session);
+    session.onExit(() => {
+      this.remove(session.id, false);
+    });
     return session;
   }
 
@@ -34,11 +40,16 @@ export class SessionManager {
 
   /** 终止并移除会话 */
   destroy(id: string): boolean {
+    return this.remove(id, true);
+  }
+
+  private remove(id: string, kill: boolean): boolean {
     const session = this.sessions.get(id);
     if (!session) return false;
-    session.destroy();
     this.sessions.delete(id);
     if (this.defaultId === id) this.defaultId = undefined;
+    if (kill) session.destroy();
+    this.emit({ type: 'session_destroyed', sessionId: id, sessions: this.list() });
     return true;
   }
 
@@ -51,5 +62,14 @@ export class SessionManager {
     for (const session of this.sessions.values()) session.destroy();
     this.sessions.clear();
     this.defaultId = undefined;
+  }
+
+  onEvent(listener: (event: SessionManagerEvent) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private emit(event: SessionManagerEvent): void {
+    for (const listener of this.listeners) listener(event);
   }
 }
