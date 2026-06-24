@@ -26,50 +26,49 @@
     }
   ],
   "voiceSettings": {
-    "commandAliases": {
-      "submit": [
-        "回车",
-        "提交",
-        "发送",
-        "确认",
-        "执行",
-        "enter"
-      ],
-      "escape": [
-        "取消",
-        "退出",
-        "返回",
-        "esc",
-        "escape"
-      ],
-      "interrupt": [
-        "中断",
-        "停止",
-        "停止执行",
-        "打断",
-        "ctrl c",
-        "control c"
-      ],
-      "up": [
-        "上",
-        "向上",
-        "上一个",
-        "上一条",
-        "上一项"
-      ],
-      "down": [
-        "下",
-        "向下",
-        "下一个",
-        "下一条",
-        "下一项"
-      ],
-      "space": [
-        "空格",
-        "选择",
-        "确定",
-        "space"
-      ]
-    }
+    "commands": [
+      {
+        "id": "submit",
+        "label": "回车",
+        "input": "enter",
+        "keyboard": "\r",
+        "aliases": ["回车", "提交", "发送", "确认", "执行", "enter"]
+      },
+      {
+        "id": "escape",
+        "label": "Esc",
+        "input": "esc",
+        "keyboard": "\u001b",
+        "aliases": ["取消", "退出", "返回", "esc", "escape"]
+      },
+      {
+        "id": "interrupt",
+        "label": "中断",
+        "input": "ctrl+c",
+        "keyboard": "\u0003",
+        "aliases": ["中断", "停止", "停止执行", "打断", "ctrl c", "control c"]
+      },
+      {
+        "id": "up",
+        "label": "上",
+        "input": "arrowUp",
+        "keyboard": "\u001b[A",
+        "aliases": ["上", "向上", "上一个", "上一条", "上一项"]
+      },
+      {
+        "id": "down",
+        "label": "下",
+        "input": "arrowDown",
+        "keyboard": "\u001b[B",
+        "aliases": ["下", "向下", "下一个", "下一条", "下一项"]
+      },
+      {
+        "id": "space",
+        "label": "空格",
+        "input": "space",
+        "keyboard": " ",
+        "aliases": ["空格", "选择", "确定", "space"]
+      }
+    ]
   }
 }

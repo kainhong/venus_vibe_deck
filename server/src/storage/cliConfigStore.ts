@@ -19,18 +19,28 @@ export interface ConfigDoc {
   voiceSettings?: {
     /** Runtime value from .env VOICE_USE_SERVER; settings.json is not the source of truth. */
     useServerVoice: boolean;
-    commandAliases?: Partial<Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]>>;
+    commands: VoiceCommandConfig[];
   };
 }
 
-export const DEFAULT_VOICE_COMMAND_ALIASES: Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]> = {
-  submit: ['回车', '确定', '确认', '提交', '发送', '执行', 'enter'],
-  escape: ['取消', '退出', '返回', 'esc', 'escape'],
-  interrupt: ['中断', '停止', '停止执行', '打断', 'ctrl c', 'control c'],
-  up: ['上', '向上', '上一个', '上一条', '上一项'],
-  down: ['下', '向下', '下一个', '下一条', '下一项'],
-  space: ['空格', 'space'],
-};
+export interface VoiceCommandConfig {
+  id: string;
+  label: string;
+  /** Readable key directive resolved by the client, e.g. enter, esc, ctrl+c, arrowUp, tab, space. */
+  input: string;
+  /** Exact terminal input sequence sent by the client. JSON escapes are supported, e.g. "\r", "\u001b", "\u0003". */
+  keyboard: string;
+  aliases: string[];
+}
+
+export const DEFAULT_VOICE_COMMANDS: VoiceCommandConfig[] = [
+  { id: 'submit', label: '回车', input: 'enter', keyboard: '\r', aliases: ['回车', '提交', '发送', '确认', '执行', 'enter'] },
+  { id: 'escape', label: 'Esc', input: 'esc', keyboard: '\x1b', aliases: ['取消', '退出', '返回', 'esc', 'escape'] },
+  { id: 'interrupt', label: '中断', input: 'ctrl+c', keyboard: '\x03', aliases: ['中断', '停止', '停止执行', '打断', 'ctrl c', 'control c'] },
+  { id: 'up', label: '上', input: 'arrowUp', keyboard: '\x1b[A', aliases: ['上', '向上', '上一个', '上一条', '上一项'] },
+  { id: 'down', label: '下', input: 'arrowDown', keyboard: '\x1b[B', aliases: ['下', '向下', '下一个', '下一条', '下一项'] },
+  { id: 'space', label: '空格', input: 'space', keyboard: ' ', aliases: ['空格', '选择', '确定', 'space'] },
+];
 
 /**
  * 首次启动默认配置:固定 id(未保存前也稳定)。Claude 为默认。
@@ -45,7 +55,7 @@ function defaultConfig(): ConfigDoc {
     ],
     voiceSettings: {
       useServerVoice: config.voice.useServerVoice,
-      commandAliases: DEFAULT_VOICE_COMMAND_ALIASES,
+      commands: DEFAULT_VOICE_COMMANDS,
     },
   };
 }
@@ -64,23 +74,23 @@ function normalize(doc: ConfigDoc): ConfigDoc {
     ...doc,
     voiceSettings: {
       useServerVoice: config.voice.useServerVoice,
-      commandAliases: normalizeCommandAliases(doc.voiceSettings?.commandAliases),
+      commands: normalizeVoiceCommands(doc.voiceSettings?.commands),
     },
   };
 }
 
-function normalizeCommandAliases(
-  aliases?: Partial<Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]>>,
-): Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]> {
-  const result = { ...DEFAULT_VOICE_COMMAND_ALIASES };
-  if (!aliases || typeof aliases !== 'object') return result;
-  for (const command of Object.keys(result) as Array<keyof typeof result>) {
-    const values = aliases[command];
-    if (!Array.isArray(values)) continue;
-    const cleaned = values.map((v) => v.trim()).filter(Boolean);
-    if (cleaned.length > 0) result[command] = cleaned;
-  }
-  return result;
+function normalizeVoiceCommands(commands?: VoiceCommandConfig[]): VoiceCommandConfig[] {
+  if (!Array.isArray(commands)) return DEFAULT_VOICE_COMMANDS;
+  const cleaned = commands
+    .map((item) => ({
+      id: item.id?.trim(),
+      label: item.label?.trim(),
+      input: item.input?.trim(),
+      keyboard: typeof item.keyboard === 'string' ? item.keyboard : '',
+      aliases: Array.isArray(item.aliases) ? item.aliases.map((v) => v.trim()).filter(Boolean) : [],
+    }))
+    .filter((item): item is VoiceCommandConfig => Boolean(item.id && item.label && item.input && item.keyboard && item.aliases.length));
+  return cleaned.length > 0 ? cleaned : DEFAULT_VOICE_COMMANDS;
 }
 
 export async function loadConfig(): Promise<ConfigDoc> {

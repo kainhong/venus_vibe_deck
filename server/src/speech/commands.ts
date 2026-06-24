@@ -1,7 +1,5 @@
-import type { SpeechCommand, SpeechResult } from './types.js';
-import { DEFAULT_VOICE_COMMAND_ALIASES, loadConfig } from '../storage/cliConfigStore.js';
-
-const COMMANDS: SpeechCommand[] = ['submit', 'escape', 'interrupt', 'up', 'down', 'space'];
+import type { SpeechResult } from './types.js';
+import { loadConfig } from '../storage/cliConfigStore.js';
 
 export function normalizeSpeechText(text: string): string {
   return text
@@ -17,15 +15,14 @@ function aliasMatches(alias: string, normalizedText: string): boolean {
 export async function parseSpeechCommand(text: string): Promise<SpeechResult | null> {
   const normalized = normalizeSpeechText(text);
   const config = await loadConfig();
-  const aliases = config.voiceSettings?.commandAliases ?? DEFAULT_VOICE_COMMAND_ALIASES;
-  for (const command of COMMANDS) {
-    const commandAliases = aliases[command] ?? DEFAULT_VOICE_COMMAND_ALIASES[command];
-    const matched = commandAliases.find((alias) => aliasMatches(alias, normalized));
+  const commands = config.voiceSettings?.commands ?? [];
+  for (const command of commands) {
+    const matched = command.aliases.find((alias) => aliasMatches(alias, normalized));
     if (matched) {
       return {
         type: 'command',
-        command,
-        message: matched,
+        command: command.id,
+        message: command.label || matched,
         provider: 'server-regex',
       };
     }

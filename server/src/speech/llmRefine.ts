@@ -1,8 +1,7 @@
 import { config } from '../config.js';
 import { parseSpeechCommand } from './commands.js';
-import type { SpeechCommand, SpeechResult } from './types.js';
-
-const COMMANDS: SpeechCommand[] = ['submit', 'escape', 'interrupt', 'up', 'down', 'space'];
+import { loadConfig } from '../storage/cliConfigStore.js';
+import type { SpeechResult } from './types.js';
 
 function stripJsonFence(text: string): string {
   return text
@@ -13,7 +12,7 @@ function stripJsonFence(text: string): string {
     .trim();
 }
 
-function validateSpeechResult(value: unknown): SpeechResult | null {
+function validateSpeechResult(value: unknown, commandIds: string[]): SpeechResult | null {
   if (!value || typeof value !== 'object') return null;
   const item = value as Record<string, unknown>;
   if (item.type === 'text' && typeof item.message === 'string' && item.message.trim()) {
@@ -23,12 +22,12 @@ function validateSpeechResult(value: unknown): SpeechResult | null {
     item.type === 'command' &&
     typeof item.message === 'string' &&
     typeof item.command === 'string' &&
-    COMMANDS.includes(item.command as SpeechCommand)
+    commandIds.includes(item.command)
   ) {
     return {
       type: 'command',
       message: item.message.trim() || item.command,
-      command: item.command as SpeechCommand,
+      command: item.command,
       provider: 'server-llm',
     };
   }
@@ -47,6 +46,10 @@ export async function refineTranscriptWithLlm(transcript: string): Promise<Speec
   const directCommand = await parseSpeechCommand(transcript);
   if (directCommand) return directCommand;
   if (!config.voice.llmApiKey) return fallbackText(transcript);
+  const commandIds = (await loadConfig()).voiceSettings?.commands.map((item) => item.id) ?? [];
+  const commandPrompt = (await loadConfig()).voiceSettings?.commands
+    .map((item) => `${item.id}: ${item.label}, aliases=${item.aliases.join('/')}`)
+    .join('\n') ?? '';
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.voice.llmTimeoutMs);
@@ -70,9 +73,10 @@ export async function refineTranscriptWithLlm(transcript: string): Promise<Speec
               'You convert short Chinese voice transcripts into a JSON SpeechResult for a terminal control panel.',
               'Return only JSON.',
               'For normal user intent, return {"type":"text","message":"cleaned text"}.',
-              'For control commands, return {"type":"command","message":"spoken label","command":"submit|escape|interrupt|up|down|space"}.',
+              'For control commands, return {"type":"command","message":"spoken label","command":"one of configured command ids"}.',
               'Remove filler words, repeated fragments, and obvious noise.',
               'Preserve technical terms, code identifiers, paths, commands, and model names.',
+              `Configured commands:\n${commandPrompt}`,
             ].join('\n'),
           },
           {
@@ -90,7 +94,7 @@ export async function refineTranscriptWithLlm(transcript: string): Promise<Speec
     const content = data.choices?.[0]?.message?.content;
     if (!content) return fallbackText(transcript);
     const parsed = JSON.parse(stripJsonFence(content)) as unknown;
-    return validateSpeechResult(parsed) ?? fallbackText(transcript);
+    return validateSpeechResult(parsed, commandIds) ?? fallbackText(transcript);
   } catch {
     return fallbackText(transcript);
   } finally {

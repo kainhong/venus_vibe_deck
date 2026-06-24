@@ -700,18 +700,35 @@ textarea {
   font-size: 15px;
 }
 
-.voice-command-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.voice-command-field {
+.voice-command-summary {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
 }
 
-.voice-command-field span {
+.voice-command-line {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  margin: 0;
   font-size: 12px;
+}
+
+.voice-command-line span {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.voice-command-line code {
+  color: var(--text);
+  font-family: inherit;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .config-item {

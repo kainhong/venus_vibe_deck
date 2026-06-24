@@ -7,20 +7,10 @@ import { StatusBar } from './components/StatusBar';
 import { SettingsPage } from './components/SettingsPage';
 import { NewSessionPanel } from './components/NewSessionPanel';
 import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrowserSpeechRecognition';
-import type { SpeechCommand } from './types';
 
 const IMMERSIVE_LONG_PRESS_MS = 160;
 
 type View = 'terminal' | 'settings' | 'newSession';
-
-const COMMAND_INPUT: Record<SpeechCommand, string> = {
-  submit: '\r',
-  escape: '\x1b',
-  interrupt: '\x03',
-  up: '\x1b[A',
-  down: '\x1b[B',
-  space: ' ',
-};
 
 export default function App() {
   const writerRef = useRef<TerminalWriter | null>(null);
@@ -41,8 +31,12 @@ export default function App() {
 
   const handleSpeechResult = useCallback((result: SpeechResult) => {
     if (result.type === 'text') api.sendInput(result.message);
-    else api.sendInput(COMMAND_INPUT[result.command]);
-  }, [api]);
+    else {
+      const command = config?.voiceSettings?.commands.find((item) => item.id === result.command);
+      const input = command?.keyboard ?? '';
+      if (input) api.sendInput(input);
+    }
+  }, [api, config]);
 
   const speech = useBrowserSpeechRecognition({
     lang: 'zh-CN',

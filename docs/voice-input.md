@@ -120,7 +120,7 @@ VOICE_LLM_MODEL=gpt-4.1-mini
 1. Validate request size and audio metadata.
 2. Send PCM chunks to ASR provider with `input_audio_buffer.append`, then `input_audio_buffer.commit`.
 3. Extract the final transcript from provider events.
-4. Run deterministic command parsing first. Command aliases are loaded from `server/config/settings.json`; if config is missing, built-in defaults are used. If aliases match a supported command, return directly without LLM.
+4. Run deterministic command parsing first. Voice commands are loaded from `server/config/settings.json`; each command defines a human-readable `input`, an exact `keyboard` sequence, and `aliases`. If aliases match a supported command, return directly without LLM.
 5. Otherwise call the configured text LLM to clean the transcript:
    - remove filler words, repeated fragments, and obvious noise;
    - preserve user intent and technical terms;
@@ -138,24 +138,32 @@ Supported command examples:
 | `下一个`, `向下` | `{ type: 'command', command: 'down' }` |
 | `空格` | `{ type: 'command', command: 'space' }` |
 
-Users can tune aliases for accents and habits:
+Users can tune keyboard directives and aliases for accents and habits:
 
 ```json
 {
   "voiceSettings": {
-    "commandAliases": {
-      "submit": ["回车", "确定", "走你"],
-      "escape": ["取消", "撤销"],
-      "interrupt": ["中断", "停一下"],
-      "up": ["上一个", "往上"],
-      "down": ["下一个", "往下"],
-      "space": ["空格"]
-    }
+    "commands": [
+      {
+        "id": "submit",
+        "label": "回车",
+        "input": "enter",
+        "keyboard": "\r",
+        "aliases": ["回车", "确定", "走你"]
+      },
+      {
+        "id": "interrupt",
+        "label": "中断",
+        "input": "ctrl+c",
+        "keyboard": "\u0003",
+        "aliases": ["中断", "停一下"]
+      }
+    ]
   }
 }
 ```
 
-`VOICE_USE_SERVER` is intentionally kept in `.env`; `settings.json` only stores user-facing alias preferences.
+`VOICE_USE_SERVER` is intentionally kept in `.env`; `settings.json` stores user-facing voice command preferences. `keyboard` is the exact sequence sent to the PTY, so JSON escapes like `"\r"`, `"\u001b"`, and `"\u0003"` are valid.
 
 ### 3. `local-wasm` - Technical Exploration
 

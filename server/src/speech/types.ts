@@ -1,5 +1,3 @@
-export type SpeechCommand = 'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space';
-
 export type SpeechResult =
   | {
       type: 'text';
@@ -11,7 +9,7 @@ export type SpeechResult =
   | {
       type: 'command';
       message: string;
-      command: SpeechCommand;
+      command: string;
       confidence?: number;
       provider?: string;
       durationMs?: number;
