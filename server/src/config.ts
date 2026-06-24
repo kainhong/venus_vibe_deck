@@ -4,7 +4,7 @@
  */
 export const config = {
   /** HTTP/WS 监听端口 */
-  port: Number(process.env.PORT ?? 8080),
+  port: Number(process.env.PORT ?? 8001),
   /** 监听地址,0.0.0.0 暴露到局域网 */
   host: process.env.HOST ?? '0.0.0.0',
   /** PTY 默认挂载的命令:显式 PTY_COMMAND 优先,否则 bash(对齐 spec) */
