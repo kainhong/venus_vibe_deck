@@ -1,4 +1,5 @@
 import { existsSync } from 'fs';
+import { config } from '../config.js';
 import { readJson, writeJson } from './jsonStore.js';
 import { CONFIG_FILE } from './paths.js';
 
@@ -15,7 +16,21 @@ export interface CliConfig {
 
 export interface ConfigDoc {
   cliConfigs: CliConfig[];
+  voiceSettings?: {
+    /** Runtime value from .env VOICE_USE_SERVER; settings.json is not the source of truth. */
+    useServerVoice: boolean;
+    commandAliases?: Partial<Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]>>;
+  };
 }
+
+export const DEFAULT_VOICE_COMMAND_ALIASES: Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]> = {
+  submit: ['回车', '确定', '确认', '提交', '发送', '执行', 'enter'],
+  escape: ['取消', '退出', '返回', 'esc', 'escape'],
+  interrupt: ['中断', '停止', '停止执行', '打断', 'ctrl c', 'control c'],
+  up: ['上', '向上', '上一个', '上一条', '上一项'],
+  down: ['下', '向下', '下一个', '下一条', '下一项'],
+  space: ['空格', 'space'],
+};
 
 /**
  * 首次启动默认配置:固定 id(未保存前也稳定)。Claude 为默认。
@@ -28,6 +43,10 @@ function defaultConfig(): ConfigDoc {
       { id: 'codex-default', name: 'Codex', command: 'codex', args: [], resumeArg: '', isDefault: false },
       { id: 'opencode-default', name: 'OpenCode', command: 'opencode', args: [], resumeArg: '', isDefault: false },
     ],
+    voiceSettings: {
+      useServerVoice: config.voice.useServerVoice,
+      commandAliases: DEFAULT_VOICE_COMMAND_ALIASES,
+    },
   };
 }
 
@@ -41,7 +60,27 @@ function normalize(doc: ConfigDoc): ConfigDoc {
     }
     return { ...c, isDefault: false };
   });
-  return doc;
+  return {
+    ...doc,
+    voiceSettings: {
+      useServerVoice: config.voice.useServerVoice,
+      commandAliases: normalizeCommandAliases(doc.voiceSettings?.commandAliases),
+    },
+  };
+}
+
+function normalizeCommandAliases(
+  aliases?: Partial<Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]>>,
+): Record<'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space', string[]> {
+  const result = { ...DEFAULT_VOICE_COMMAND_ALIASES };
+  if (!aliases || typeof aliases !== 'object') return result;
+  for (const command of Object.keys(result) as Array<keyof typeof result>) {
+    const values = aliases[command];
+    if (!Array.isArray(values)) continue;
+    const cleaned = values.map((v) => v.trim()).filter(Boolean);
+    if (cleaned.length > 0) result[command] = cleaned;
+  }
+  return result;
 }
 
 export async function loadConfig(): Promise<ConfigDoc> {
@@ -56,7 +95,7 @@ export async function loadConfig(): Promise<ConfigDoc> {
     await writeJson(CONFIG_FILE, fallback);
     return fallback;
   }
-  return doc;
+  return normalize(doc);
 }
 
 export async function saveConfig(doc: ConfigDoc): Promise<void> {

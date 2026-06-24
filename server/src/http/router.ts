@@ -3,6 +3,8 @@ import { loadConfig, saveConfig, type ConfigDoc } from '../storage/cliConfigStor
 import { addWorkspace, loadHistory } from '../storage/workspaceHistoryStore.js';
 import { listDir } from './listDir.js';
 import { PathForbiddenError } from '../util/pathGuard.js';
+import { transcribeSpeech } from '../speech/speechService.js';
+import type { SpeechTranscribeRequest } from '../speech/types.js';
 
 /**
  * HTTP API 路由分发。
@@ -46,6 +48,11 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse): Prom
       return json(res, 200, await listDir(searchParams.get('path') ?? undefined));
     }
 
+    if (pathname === '/api/speech/transcribe') {
+      if (method !== 'POST') return json(res, 405, { error: 'method not allowed' });
+      return json(res, 200, await transcribeSpeech(await readBody<SpeechTranscribeRequest>(req, 6 * 1024 * 1024)));
+    }
+
     return json(res, 404, { error: 'not found' });
   } catch (err) {
     if (err instanceof PathForbiddenError) return json(res, 403, { error: err.message });
@@ -60,9 +67,15 @@ function json(res: ServerResponse, status: number, body: unknown): boolean {
 }
 
 /** 读取并解析 JSON 请求体;空 body 抛错(由 catch 转 400) */
-async function readBody<T>(req: IncomingMessage): Promise<T> {
+async function readBody<T>(req: IncomingMessage, maxBytes = 1024 * 1024): Promise<T> {
   const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(chunk as Buffer);
+  let size = 0;
+  for await (const chunk of req) {
+    const buf = chunk as Buffer;
+    size += buf.length;
+    if (size > maxBytes) throw new Error('request body too large');
+    chunks.push(buf);
+  }
   const raw = Buffer.concat(chunks).toString('utf8');
   if (!raw) throw new Error('empty body');
   return JSON.parse(raw) as T;

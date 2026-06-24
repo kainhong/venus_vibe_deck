@@ -57,6 +57,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
   };
 
   const startVoicePress = () => {
+    if (speech.state === 'processing') return;
     if (!speech.supported) {
       alert('当前浏览器不支持本地语音识别');
       return;
@@ -71,6 +72,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
 
   const endVoicePress = () => {
     clearVoicePressTimer();
+    if (speech.state === 'processing') return;
     if (voiceLongPressRef.current) {
       speech.stop();
       voiceLongPressRef.current = false;
@@ -150,7 +152,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
             }}
             aria-label={k.label}
             aria-pressed={k.id === 'voice' ? speech.listening : undefined}
-            disabled={k.id === 'voice' && !speech.supported}
+            disabled={k.id === 'voice' && (!speech.supported || speech.state === 'processing')}
           >
             {'glyph' in k ? (
               k.glyph

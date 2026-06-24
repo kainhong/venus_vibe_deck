@@ -61,6 +61,8 @@ export type SpeechResult =
 | processing | 禁用重复触发,等待识别结果 |
 | error | 短暂提示错误,不影响会话 |
 
+`processing` 期间语音输入串行等待:不启动新的录音,不做并发识别或队列。这样可以保持 terminal 输入顺序,避免后说的内容先返回并写入会话。
+
 ## Provider Modes
 
 ### 1. `browser-native` - Current First Step
@@ -81,30 +83,79 @@ export type SpeechResult =
 - 如果当前浏览器无 `SpeechRecognition` 能力,语音按钮提示“当前浏览器不支持本地识别”。
 - 不自动降级到后端,除非用户在设置中选择后端 provider。
 
-### 2. `server-openai-compatible` - Later
+### 2. `server-openai-compatible` - Next
 
-前端用 `MediaRecorder` 录音,上传音频到后端:
+前端采集短语音片段并转成 `pcm16 16k` 后上传到后端。后端参考 `docs/reference/voice.py` 使用 OpenAI Realtime-compatible WebSocket ASR provider 做识别,再把识别文本整理成统一的 `SpeechResult`。
 
 ```http
 POST /api/speech/transcribe
-Content-Type: multipart/form-data
-```
+Content-Type: application/json
 
-后端调用 OpenAI 协议兼容 provider,返回 `SpeechResult`。API key 只保存在后端配置或环境变量中。
-
-建议配置字段:
-
-```ts
-interface SpeechProviderConfig {
-  id: string;
-  name: string;
-  type: 'openai-compatible';
-  baseUrl: string;
-  apiKeyEnv?: string;
-  model: string;
-  isDefault: boolean;
+{
+  "audio": "<base64 pcm16le>",
+  "sampleRate": 16000,
+  "language": "zh",
+  "submitMode": "insert" | "submit"
 }
 ```
+
+API key 只保存在后端 `.env` 或部署环境变量中,前端永不接触。
+
+#### Environment
+
+```env
+VOICE_USE_SERVER=true
+VOICE_ASR_BASE_URL=wss://a1.tstech.top/v1/realtime
+VOICE_ASR_API_KEY=sk-xxx
+VOICE_ASR_MODEL=qwen3-asr-flash-realtime
+VOICE_ASR_SAMPLE_RATE=16000
+
+VOICE_LLM_BASE_URL=https://api.openai.com/v1
+VOICE_LLM_API_KEY=sk-xxx
+VOICE_LLM_MODEL=gpt-4.1-mini
+```
+
+#### Server Pipeline
+
+1. Validate request size and audio metadata.
+2. Send PCM chunks to ASR provider with `input_audio_buffer.append`, then `input_audio_buffer.commit`.
+3. Extract the final transcript from provider events.
+4. Run deterministic command parsing first. Command aliases are loaded from `server/config/settings.json`; if config is missing, built-in defaults are used. If aliases match a supported command, return directly without LLM.
+5. Otherwise call the configured text LLM to clean the transcript:
+   - remove filler words, repeated fragments, and obvious noise;
+   - preserve user intent and technical terms;
+   - produce either `type: 'text'` or a supported `type: 'command'`.
+6. Apply `submitMode`: text results append `\r` only when submit mode is requested.
+
+Supported command examples:
+
+| Voice Text | Result |
+|---|---|
+| `回车`, `确定`, `提交` | `{ type: 'command', command: 'submit' }` |
+| `取消`, `退出`, `esc` | `{ type: 'command', command: 'escape' }` |
+| `中断`, `停止执行` | `{ type: 'command', command: 'interrupt' }` |
+| `上一个`, `向上` | `{ type: 'command', command: 'up' }` |
+| `下一个`, `向下` | `{ type: 'command', command: 'down' }` |
+| `空格` | `{ type: 'command', command: 'space' }` |
+
+Users can tune aliases for accents and habits:
+
+```json
+{
+  "voiceSettings": {
+    "commandAliases": {
+      "submit": ["回车", "确定", "走你"],
+      "escape": ["取消", "撤销"],
+      "interrupt": ["中断", "停一下"],
+      "up": ["上一个", "往上"],
+      "down": ["下一个", "往下"],
+      "space": ["空格"]
+    }
+  }
+}
+```
+
+`VOICE_USE_SERVER` is intentionally kept in `.env`; `settings.json` only stores user-facing alias preferences.
 
 ### 3. `local-wasm` - Technical Exploration
 
@@ -130,15 +181,17 @@ interface VoiceSettings {
   mode: 'browser-native' | 'server-openai-compatible' | 'local-wasm' | 'off';
   submitMode: 'insert' | 'submit';
   language: string; // default: 'zh-CN'
+  useServerVoice: boolean; // resolved from .env VOICE_USE_SERVER
 }
 ```
 
 当前实现只需要:
 
 ```ts
-mode: 'browser-native';
+mode: 'browser-native' | 'server-openai-compatible';
 submitMode: 'insert';
 language: 'zh-CN';
+useServerVoice: false;
 ```
 
 ## First Implementation Scope

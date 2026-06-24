@@ -16,4 +16,23 @@ export const config = {
   /** 默认终端尺寸 */
   cols: Number(process.env.PTY_COLS ?? 80),
   rows: Number(process.env.PTY_ROWS ?? 24),
+  voice: {
+    useServerVoice: parseBoolean(process.env.VOICE_USE_SERVER, false),
+    asrBaseUrl: process.env.VOICE_ASR_BASE_URL ?? 'wss://a1.tstech.top/v1/realtime',
+    asrApiKey: process.env.VOICE_ASR_API_KEY ?? '',
+    asrModel: process.env.VOICE_ASR_MODEL ?? 'qwen3-asr-flash-realtime',
+    asrSampleRate: Number(process.env.VOICE_ASR_SAMPLE_RATE ?? 16000),
+    asrChunkBytes: Number(process.env.VOICE_ASR_CHUNK_BYTES ?? 3200),
+    asrChunkIntervalMs: Number(process.env.VOICE_ASR_CHUNK_INTERVAL_MS ?? 40),
+    asrTimeoutMs: Number(process.env.VOICE_ASR_TIMEOUT_MS ?? 30000),
+    llmBaseUrl: process.env.VOICE_LLM_BASE_URL ?? 'https://api.openai.com/v1',
+    llmApiKey: process.env.VOICE_LLM_API_KEY ?? '',
+    llmModel: process.env.VOICE_LLM_MODEL ?? 'gpt-4.1-mini',
+    llmTimeoutMs: Number(process.env.VOICE_LLM_TIMEOUT_MS ?? 30000),
+  },
 } as const;
+
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (value === undefined) return fallback;
+  return /^(1|true|yes|on)$/i.test(value.trim());
+}

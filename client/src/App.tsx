@@ -7,10 +7,20 @@ import { StatusBar } from './components/StatusBar';
 import { SettingsPage } from './components/SettingsPage';
 import { NewSessionPanel } from './components/NewSessionPanel';
 import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrowserSpeechRecognition';
+import type { SpeechCommand } from './types';
 
 const IMMERSIVE_LONG_PRESS_MS = 160;
 
 type View = 'terminal' | 'settings' | 'newSession';
+
+const COMMAND_INPUT: Record<SpeechCommand, string> = {
+  submit: '\r',
+  escape: '\x1b',
+  interrupt: '\x03',
+  up: '\x1b[A',
+  down: '\x1b[B',
+  space: ' ',
+};
 
 export default function App() {
   const writerRef = useRef<TerminalWriter | null>(null);
@@ -21,7 +31,7 @@ export default function App() {
   }, []);
 
   const api = useWebSocket(handleData, handleReset);
-  const { recordWorkspace } = useApp();
+  const { config, recordWorkspace } = useApp();
   const [view, setView] = useState<View>('terminal');
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
   const [immersive, setImmersive] = useState(false);
@@ -31,11 +41,13 @@ export default function App() {
 
   const handleSpeechResult = useCallback((result: SpeechResult) => {
     if (result.type === 'text') api.sendInput(result.message);
+    else api.sendInput(COMMAND_INPUT[result.command]);
   }, [api]);
 
   const speech = useBrowserSpeechRecognition({
     lang: 'zh-CN',
     submitMode: immersive ? 'submit' : 'insert',
+    useServerVoice: config?.voiceSettings?.useServerVoice ?? false,
     onResult: handleSpeechResult,
     onError: (message) => alert(message),
   });
@@ -79,6 +91,7 @@ export default function App() {
   }, []);
 
   const startImmersivePress = useCallback((point: { x: number; y: number }) => {
+    if (speech.state === 'processing') return;
     if (!speech.supported) {
       alert('当前浏览器不支持本地语音识别');
       return;
@@ -140,6 +153,7 @@ export default function App() {
             style={immersiveVoiceStyle}
             onPointerDown={(e) => {
               e.preventDefault();
+              if (speech.state === 'processing') return;
               e.currentTarget.setPointerCapture(e.pointerId);
               startImmersivePress({ x: e.clientX, y: e.clientY });
             }}

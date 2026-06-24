@@ -56,6 +56,36 @@ export interface CliConfig {
 
 export interface ConfigDoc {
   cliConfigs: CliConfig[];
+  voiceSettings?: {
+    useServerVoice: boolean;
+    commandAliases?: Partial<Record<SpeechCommand, string[]>>;
+  };
+}
+
+export type SpeechCommand = 'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space';
+
+export type SpeechResult =
+  | {
+      type: 'text';
+      message: string;
+      confidence?: number;
+      provider?: string;
+      durationMs?: number;
+    }
+  | {
+      type: 'command';
+      message: string;
+      command: SpeechCommand;
+      confidence?: number;
+      provider?: string;
+      durationMs?: number;
+    };
+
+export interface SpeechTranscribeRequest {
+  audio: string;
+  sampleRate: number;
+  language?: string;
+  submitMode?: 'insert' | 'submit';
 }
 
 export interface WorkspaceHistoryEntry {

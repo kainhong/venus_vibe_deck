@@ -1,21 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { api } from '../api/http';
+import type { SpeechResult } from '../types';
 
-export type SpeechResult =
-  | {
-      type: 'text';
-      message: string;
-      confidence?: number;
-      provider?: string;
-      durationMs?: number;
-    }
-  | {
-      type: 'command';
-      message: string;
-      command: 'submit' | 'escape' | 'interrupt' | 'up' | 'down' | 'space';
-      confidence?: number;
-      provider?: string;
-      durationMs?: number;
-    };
+export type { SpeechResult } from '../types';
 
 type SpeechState = 'idle' | 'listening' | 'processing' | 'unsupported' | 'error';
 
@@ -71,6 +58,7 @@ declare global {
 export interface UseBrowserSpeechRecognitionOptions {
   lang?: string;
   submitMode?: 'insert' | 'submit';
+  useServerVoice?: boolean;
   onResult: (result: SpeechResult) => void;
   onError?: (message: string) => void;
 }
@@ -79,6 +67,7 @@ export interface UseBrowserSpeechRecognitionReturn {
   state: SpeechState;
   supported: boolean;
   listening: boolean;
+  busy: boolean;
   start: () => void;
   stop: () => void;
   cancel: () => void;
@@ -88,6 +77,7 @@ export interface UseBrowserSpeechRecognitionReturn {
 export function useBrowserSpeechRecognition({
   lang = 'zh-CN',
   submitMode = 'insert',
+  useServerVoice = false,
   onResult,
   onError,
 }: UseBrowserSpeechRecognitionOptions): UseBrowserSpeechRecognitionReturn {
@@ -96,9 +86,18 @@ export function useBrowserSpeechRecognition({
   const confidenceRef = useRef<number | undefined>(undefined);
   const startedAtRef = useRef(0);
   const suppressResultRef = useRef(false);
+  const serverRecorderRef = useRef<{
+    stream: MediaStream;
+    context: AudioContext;
+    source: MediaStreamAudioSourceNode;
+    processor: ScriptProcessorNode;
+    chunks: Float32Array[];
+    sampleRate: number;
+  } | null>(null);
   const onResultRef = useRef(onResult);
   const onErrorRef = useRef(onError);
   const submitModeRef = useRef(submitMode);
+  const useServerVoiceRef = useRef(useServerVoice);
   const [state, setState] = useState<SpeechState>(() => {
     if (typeof window === 'undefined') return 'unsupported';
     return window.SpeechRecognition || window.webkitSpeechRecognition ? 'idle' : 'unsupported';
@@ -107,6 +106,7 @@ export function useBrowserSpeechRecognition({
   onResultRef.current = onResult;
   onErrorRef.current = onError;
   submitModeRef.current = submitMode;
+  useServerVoiceRef.current = useServerVoice;
 
   const cleanup = useCallback(() => {
     const recognition = recognitionRef.current;
@@ -118,7 +118,18 @@ export function useBrowserSpeechRecognition({
     recognitionRef.current = null;
   }, []);
 
-  const stop = useCallback(() => {
+  const cleanupServerRecorder = useCallback(() => {
+    const recorder = serverRecorderRef.current;
+    if (!recorder) return null;
+    recorder.processor.disconnect();
+    recorder.source.disconnect();
+    void recorder.context.close();
+    recorder.stream.getTracks().forEach((track) => track.stop());
+    serverRecorderRef.current = null;
+    return recorder;
+  }, []);
+
+  const stopBrowserRecognition = useCallback(() => {
     const recognition = recognitionRef.current;
     if (!recognition) return;
     suppressResultRef.current = false;
@@ -131,7 +142,35 @@ export function useBrowserSpeechRecognition({
     }
   }, [cleanup]);
 
-  const cancel = useCallback(() => {
+  const stopServerRecording = useCallback(() => {
+    const recorder = cleanupServerRecorder();
+    if (!recorder) return;
+    setState('processing');
+    const pcm = encodePcm16(resampleFloat32Chunks(recorder.chunks, recorder.sampleRate, 16000));
+    void api.transcribeSpeech({
+      audio: bytesToBase64(pcm),
+      sampleRate: 16000,
+      language: lang.startsWith('zh') ? 'zh' : lang,
+      submitMode: submitModeRef.current,
+    }).then((result) => {
+      setState('idle');
+      onResultRef.current(result);
+    }).catch((err: unknown) => {
+      setState('error');
+      onErrorRef.current?.((err as Error).message || '后端语音识别失败');
+      window.setTimeout(() => setState('idle'), 900);
+    });
+  }, [cleanupServerRecorder, lang]);
+
+  const stop = useCallback(() => {
+    if (useServerVoiceRef.current) {
+      stopServerRecording();
+      return;
+    }
+    stopBrowserRecognition();
+  }, [stopBrowserRecognition, stopServerRecording]);
+
+  const cancelBrowserRecognition = useCallback(() => {
     const recognition = recognitionRef.current;
     if (!recognition) {
       setState((current) => (current === 'processing' ? 'idle' : current));
@@ -146,7 +185,53 @@ export function useBrowserSpeechRecognition({
     }
   }, [cleanup]);
 
-  const start = useCallback(() => {
+  const cancel = useCallback(() => {
+    cleanupServerRecorder();
+    cancelBrowserRecognition();
+    setState('idle');
+  }, [cancelBrowserRecognition, cleanupServerRecorder]);
+
+  const startServerRecording = useCallback(() => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof AudioContext === 'undefined') {
+      setState('unsupported');
+      onErrorRef.current?.('当前浏览器不支持录音上传');
+      return;
+    }
+    if (serverRecorderRef.current) {
+      stopServerRecording();
+      return;
+    }
+    startedAtRef.current = performance.now();
+    setState('processing');
+    void navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+      .then((stream) => {
+        const context = new AudioContext();
+        const source = context.createMediaStreamSource(stream);
+        const processor = context.createScriptProcessor(4096, 1, 1);
+        const chunks: Float32Array[] = [];
+        processor.onaudioprocess = (event) => {
+          chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+        };
+        source.connect(processor);
+        processor.connect(context.destination);
+        serverRecorderRef.current = {
+          stream,
+          context,
+          source,
+          processor,
+          chunks,
+          sampleRate: context.sampleRate,
+        };
+        setState('listening');
+      })
+      .catch((err: unknown) => {
+        setState('error');
+        onErrorRef.current?.((err as Error).message || '无法访问麦克风');
+        window.setTimeout(() => setState('idle'), 900);
+      });
+  }, [stopServerRecording]);
+
+  const startBrowserRecognition = useCallback(() => {
     const SpeechRecognitionCtor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) {
       setState('unsupported');
@@ -155,7 +240,7 @@ export function useBrowserSpeechRecognition({
     }
 
     if (recognitionRef.current) {
-      stop();
+      stopBrowserRecognition();
       return;
     }
 
@@ -224,17 +309,84 @@ export function useBrowserSpeechRecognition({
       onErrorRef.current?.((err as Error).message || '语音识别启动失败');
       window.setTimeout(() => setState('idle'), 900);
     }
-  }, [cleanup, lang, stop]);
+  }, [cleanup, lang, stopBrowserRecognition]);
 
-  useEffect(() => cleanup, [cleanup]);
+  const start = useCallback(() => {
+    if (state === 'processing') return;
+    if (useServerVoiceRef.current) {
+      startServerRecording();
+      return;
+    }
+    startBrowserRecognition();
+  }, [startBrowserRecognition, startServerRecording, state]);
+
+  useEffect(() => {
+    setState(() => {
+      if (useServerVoice) {
+        return navigator.mediaDevices && typeof AudioContext !== 'undefined' ? 'idle' : 'unsupported';
+      }
+      return window.SpeechRecognition || window.webkitSpeechRecognition ? 'idle' : 'unsupported';
+    });
+  }, [useServerVoice]);
+
+  useEffect(() => () => {
+    cleanup();
+    cleanupServerRecorder();
+  }, [cleanup, cleanupServerRecorder]);
 
   return {
     state,
     supported: state !== 'unsupported',
     listening: state === 'listening',
+    busy: state === 'listening' || state === 'processing',
     start,
     stop,
     cancel,
     toggle: state === 'listening' ? stop : start,
   };
+}
+
+function flattenChunks(chunks: Float32Array[]): Float32Array {
+  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Float32Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function resampleFloat32Chunks(chunks: Float32Array[], inputRate: number, outputRate: number): Float32Array {
+  const input = flattenChunks(chunks);
+  if (inputRate === outputRate) return input;
+  const ratio = inputRate / outputRate;
+  const outputLength = Math.floor(input.length / ratio);
+  const output = new Float32Array(outputLength);
+  for (let i = 0; i < outputLength; i += 1) {
+    const sourceIndex = i * ratio;
+    const low = Math.floor(sourceIndex);
+    const high = Math.min(low + 1, input.length - 1);
+    const weight = sourceIndex - low;
+    output[i] = input[low] * (1 - weight) + input[high] * weight;
+  }
+  return output;
+}
+
+function encodePcm16(input: Float32Array): Uint8Array {
+  const output = new Uint8Array(input.length * 2);
+  const view = new DataView(output.buffer);
+  for (let i = 0; i < input.length; i += 1) {
+    const sample = Math.max(-1, Math.min(1, input[i]));
+    view.setInt16(i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+  }
+  return output;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }

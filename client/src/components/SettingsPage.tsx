@@ -1,6 +1,26 @@
 import { useState } from 'react';
 import { useApp } from '../state/AppContext';
-import type { CliConfig } from '../types';
+import type { CliConfig, SpeechCommand } from '../types';
+
+const DEFAULT_COMMAND_ALIASES: Record<SpeechCommand, string[]> = {
+  submit: ['回车', '确定', '确认', '提交', '发送', '执行', 'enter'],
+  escape: ['取消', '退出', '返回', 'esc', 'escape'],
+  interrupt: ['中断', '停止', '停止执行', '打断', 'ctrl c', 'control c'],
+  up: ['上', '向上', '上一个', '上一条', '上一项'],
+  down: ['下', '向下', '下一个', '下一条', '下一项'],
+  space: ['空格', 'space'],
+};
+
+const COMMAND_LABELS: Record<SpeechCommand, string> = {
+  submit: '回车',
+  escape: 'Esc',
+  interrupt: '中断',
+  up: '上',
+  down: '下',
+  space: '空格',
+};
+
+const COMMANDS = Object.keys(DEFAULT_COMMAND_ALIASES) as SpeechCommand[];
 
 /** 空配置草稿(id 为空表示新增,保存时生成) */
 function emptyConfig(): CliConfig {
@@ -14,6 +34,10 @@ function emptyConfig(): CliConfig {
 export function SettingsPage({ onClose }: { onClose: () => void }) {
   const { config, saveConfig } = useApp();
   const [draft, setDraft] = useState<CliConfig[]>(config?.cliConfigs ?? []);
+  const [commandAliases, setCommandAliases] = useState<Record<SpeechCommand, string[]>>({
+    ...DEFAULT_COMMAND_ALIASES,
+    ...config?.voiceSettings?.commandAliases,
+  });
   const [editing, setEditing] = useState<CliConfig | null>(null);
 
   // 设默认:互斥,仅一项 isDefault
@@ -31,7 +55,13 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
   };
 
   const persist = async () => {
-    await saveConfig({ cliConfigs: draft });
+    await saveConfig({
+      cliConfigs: draft,
+      voiceSettings: {
+        useServerVoice: config?.voiceSettings?.useServerVoice ?? false,
+        commandAliases,
+      },
+    });
     onClose();
   };
 
@@ -48,6 +78,26 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
             <ConfigEditor initial={editing} onSave={saveItem} onCancel={() => setEditing(null)} />
           ) : (
             <>
+              <section className="settings-section">
+                <h3>语音</h3>
+                <p className="hint">
+                  后端语音解析: {config?.voiceSettings?.useServerVoice ? '已开启' : '未开启'}。通过 .env 的 VOICE_USE_SERVER 控制。
+                </p>
+                <div className="voice-command-list">
+                  {COMMANDS.map((command) => (
+                    <label className="field voice-command-field" key={command}>
+                      <span>{COMMAND_LABELS[command]} 别名</span>
+                      <input
+                        value={commandAliases[command].join(', ')}
+                        onChange={(e) => {
+                          const values = e.target.value.split(/[,，]/).map((v) => v.trim()).filter(Boolean);
+                          setCommandAliases((current) => ({ ...current, [command]: values }));
+                        }}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </section>
               <ul className="config-list">
                 {draft.map((c) => (
                   <li key={c.id} className="config-item">
