@@ -175,6 +175,7 @@ textarea {
 }
 
 .terminal-area {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
@@ -252,6 +253,12 @@ textarea {
   height: 22px;
   opacity: 0.78;
   filter: invert(43%) sepia(9%) saturate(594%) hue-rotate(177deg) brightness(92%) contrast(88%);
+}
+
+.more-panel-icon.immersive {
+  color: var(--muted);
+  font-size: 23px;
+  font-weight: 650;
 }
 
 .more-panel-icon.keyboard.active {
@@ -735,6 +742,89 @@ textarea {
 
 .ws-entry:active {
   background: #edf0f5;
+}
+
+.immersive-mode {
+  background: var(--terminal);
+}
+
+.immersive-mode .status-bar,
+.immersive-mode .control-panel {
+  display: none;
+}
+
+.immersive-mode .terminal-area {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  padding: 0;
+}
+
+.immersive-mode .terminal-container .xterm {
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+}
+
+.immersive-hit-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 205;
+  background: transparent;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.immersive-hit-layer.listening {
+  background: rgba(229, 72, 77, 0.08);
+}
+
+.immersive-hit-layer.processing {
+  background: rgba(47, 124, 246, 0.06);
+}
+
+.immersive-voice-float {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  min-width: 132px;
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 16px;
+  background: rgba(229, 72, 77, 0.82);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 650;
+  text-align: center;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.immersive-hit-layer.processing .immersive-voice-float {
+  background: rgba(47, 124, 246, 0.82);
+}
+
+.immersive-close {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 220;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.immersive-close:active {
+  background: rgba(255, 255, 255, 0.26);
+  transform: scale(0.96);
 }
 
 @media (max-width: 430px) {

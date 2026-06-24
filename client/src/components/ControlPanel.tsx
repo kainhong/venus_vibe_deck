@@ -5,7 +5,7 @@ import voiceIcon from '../asserts/icons/voice.svg';
 import pasteIcon from '../asserts/icons/paste.svg';
 import keyboardIcon from '../asserts/icons/keyboard.svg';
 import backspaceIcon from '../asserts/icons/backspace.svg';
-import { useBrowserSpeechRecognition, type SpeechResult } from '../hooks/useBrowserSpeechRecognition';
+import type { UseBrowserSpeechRecognitionReturn } from '../hooks/useBrowserSpeechRecognition';
 
 const LONG_PRESS_MS = 220;
 
@@ -38,30 +38,17 @@ const ACTION_CONTROLS = [
 
 interface ControlPanelProps {
   onKey: (data: string) => void;
-  onVoice?: (result: SpeechResult) => void;
+  speech: UseBrowserSpeechRecognitionReturn;
   keyboardEnabled: boolean;
   onToggleKeyboard: () => void;
   onPaste: () => void;
+  onEnterImmersive: () => void;
 }
 
-export function ControlPanel({ onKey, onVoice, keyboardEnabled, onToggleKeyboard, onPaste }: ControlPanelProps) {
+export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard, onPaste, onEnterImmersive }: ControlPanelProps) {
   const [showMore, setShowMore] = useState(false);
   const voicePressTimerRef = useRef<number | undefined>(undefined);
   const voiceLongPressRef = useRef(false);
-  const handleSpeechResult = (result: SpeechResult) => {
-    if (onVoice) {
-      onVoice(result);
-      return;
-    }
-    if (result.type === 'text') onKey(result.message);
-  };
-  const speech = useBrowserSpeechRecognition({
-    lang: 'zh-CN',
-    submitMode: 'insert',
-    onResult: handleSpeechResult,
-    onError: (message) => alert(message),
-  });
-
   const clearVoicePressTimer = () => {
     if (voicePressTimerRef.current !== undefined) {
       window.clearTimeout(voicePressTimerRef.current);
@@ -111,6 +98,14 @@ export function ControlPanel({ onKey, onVoice, keyboardEnabled, onToggleKeyboard
           >
             <span className={`more-panel-icon keyboard ${keyboardEnabled ? 'active' : ''}`}><img src={keyboardIcon} alt="" aria-hidden /></span>
             <span className="more-panel-label">{keyboardEnabled ? '关闭键盘' : '开启键盘'}</span>
+          </button>
+          <button
+            className="more-panel-item"
+            type="button"
+            onPointerDown={(e) => { e.preventDefault(); onEnterImmersive(); setShowMore(false); }}
+          >
+            <span className="more-panel-icon immersive"><span aria-hidden>⛶</span></span>
+            <span className="more-panel-label">沉浸 Vibe</span>
           </button>
         </div>
       )}

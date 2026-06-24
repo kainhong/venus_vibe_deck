@@ -75,16 +75,27 @@ export interface UseBrowserSpeechRecognitionOptions {
   onError?: (message: string) => void;
 }
 
+export interface UseBrowserSpeechRecognitionReturn {
+  state: SpeechState;
+  supported: boolean;
+  listening: boolean;
+  start: () => void;
+  stop: () => void;
+  cancel: () => void;
+  toggle: () => void;
+}
+
 export function useBrowserSpeechRecognition({
   lang = 'zh-CN',
   submitMode = 'insert',
   onResult,
   onError,
-}: UseBrowserSpeechRecognitionOptions) {
+}: UseBrowserSpeechRecognitionOptions): UseBrowserSpeechRecognitionReturn {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const transcriptRef = useRef('');
   const confidenceRef = useRef<number | undefined>(undefined);
   const startedAtRef = useRef(0);
+  const suppressResultRef = useRef(false);
   const onResultRef = useRef(onResult);
   const onErrorRef = useRef(onError);
   const submitModeRef = useRef(submitMode);
@@ -110,9 +121,25 @@ export function useBrowserSpeechRecognition({
   const stop = useCallback(() => {
     const recognition = recognitionRef.current;
     if (!recognition) return;
+    suppressResultRef.current = false;
     setState('processing');
     try {
       recognition.stop();
+    } catch {
+      cleanup();
+      setState('idle');
+    }
+  }, [cleanup]);
+
+  const cancel = useCallback(() => {
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      setState((current) => (current === 'processing' ? 'idle' : current));
+      return;
+    }
+    suppressResultRef.current = true;
+    try {
+      recognition.abort();
     } catch {
       cleanup();
       setState('idle');
@@ -134,6 +161,7 @@ export function useBrowserSpeechRecognition({
 
     transcriptRef.current = '';
     confidenceRef.current = undefined;
+    suppressResultRef.current = false;
     startedAtRef.current = performance.now();
 
     const recognition = new SpeechRecognitionCtor();
@@ -145,6 +173,11 @@ export function useBrowserSpeechRecognition({
     recognition.onstart = () => setState('listening');
     recognition.onerror = (event) => {
       cleanup();
+      if (suppressResultRef.current || event.error === 'aborted') {
+        suppressResultRef.current = false;
+        setState('idle');
+        return;
+      }
       setState('error');
       onErrorRef.current?.(event.message || `语音识别失败: ${event.error}`);
       window.setTimeout(() => setState('idle'), 900);
@@ -167,8 +200,11 @@ export function useBrowserSpeechRecognition({
     recognition.onend = () => {
       const message = transcriptRef.current.trim();
       const durationMs = Math.round(performance.now() - startedAtRef.current);
+      const suppressed = suppressResultRef.current;
+      suppressResultRef.current = false;
       cleanup();
       setState('idle');
+      if (suppressed) return;
       if (!message) return;
       onResultRef.current({
         type: 'text',
@@ -198,6 +234,7 @@ export function useBrowserSpeechRecognition({
     listening: state === 'listening',
     start,
     stop,
+    cancel,
     toggle: state === 'listening' ? stop : start,
   };
 }
