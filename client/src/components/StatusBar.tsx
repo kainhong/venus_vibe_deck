@@ -12,15 +12,12 @@ interface StatusBarProps {
 }
 
 /**
- * 顶部状态栏:连接状态 + Session 下拉 + 菜单(新建/设置/关闭当前)。
- * 菜单点外部自动关闭。
+ * 顶部状态栏:连接状态 + Session 下拉 + 常用会话操作。
  */
 export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onSettings, onCloseCurrent }: StatusBarProps) {
-  const current = sessions.find((s) => s.id === currentSessionId);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // 点菜单外部关闭
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: PointerEvent) => {
@@ -30,6 +27,11 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
     return () => document.removeEventListener('pointerdown', handler);
   }, [menuOpen]);
 
+  const showAbout = () => {
+    setMenuOpen(false);
+    alert('Venus Agent HUD');
+  };
+
   return (
     <header className="status-bar">
       <span className={`status-dot ${connected ? 'on' : 'off'}`} aria-hidden />
@@ -38,10 +40,12 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
       <select
         className="session-select"
         value={currentSessionId ?? ''}
-        onChange={(e) => onSelect(e.target.value)}
-        disabled={!connected}
+        onChange={(e) => {
+          if (e.target.value) onSelect(e.target.value);
+        }}
+        disabled={!connected || sessions.length === 0}
       >
-        {sessions.length === 0 && <option value="">无会话</option>}
+        {sessions.length === 0 && <option value="">未创建会话</option>}
         {sessions.map((s) => (
           <option key={s.id} value={s.id}>
             {s.name} {s.alive ? '' : '(已退出)'}
@@ -49,30 +53,28 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
         ))}
       </select>
 
-      {current && <span className="session-meta">id: {current.id.slice(0, 8)}</span>}
-
-      <div className="menu-wrap" ref={menuRef}>
-        <button type="button" className="menu-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="菜单" disabled={!connected}>
-          ⋯
+      <div className="header-actions" aria-label="会话操作">
+        <button type="button" className="header-btn primary" onClick={onNew} aria-label="新建会话" disabled={!connected}>
+          +
         </button>
-        {menuOpen && (
-          <div className="menu">
-            <button type="button" className="menu-item" onClick={() => { setMenuOpen(false); onNew(); }}>
-              ＋ 新建会话
-            </button>
-            <button type="button" className="menu-item" onClick={() => { setMenuOpen(false); onSettings(); }}>
-              ⚙ 设置
-            </button>
-            <button
-              type="button"
-              className="menu-item danger"
-              disabled={!currentSessionId}
-              onClick={() => { setMenuOpen(false); onCloseCurrent(); }}
-            >
-              ✕ 关闭当前会话
-            </button>
-          </div>
-        )}
+        <button type="button" className="header-btn danger" onClick={onCloseCurrent} aria-label="关闭当前会话" disabled={!currentSessionId}>
+          ×
+        </button>
+        <div className="header-menu-wrap" ref={menuRef}>
+          <button type="button" className="header-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="更多">
+            ⋯
+          </button>
+          {menuOpen && (
+            <div className="header-menu">
+              <button type="button" className="header-menu-item" onClick={() => { setMenuOpen(false); onSettings(); }}>
+                设置
+              </button>
+              <button type="button" className="header-menu-item" onClick={showAbout}>
+                关于
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

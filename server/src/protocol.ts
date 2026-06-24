@@ -30,7 +30,7 @@ export interface ResizeMessage {
 
 /** 系统控制:会话生命周期与切换 */
 export type SystemCommand =
-  | { command: 'hello' }
+  | { command: 'hello'; targetSessionId?: string }
   | {
       command: 'create_session';
       name?: string;

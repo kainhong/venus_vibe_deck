@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useWebSocket, type CreateSessionOptions } from './hooks/useWebSocket';
 import { useApp } from './state/AppContext';
-import { TerminalView } from './components/Terminal';
+import { TerminalView, type TerminalWriter } from './components/Terminal';
 import { ControlPanel } from './components/ControlPanel';
 import { StatusBar } from './components/StatusBar';
 import { SettingsPage } from './components/SettingsPage';
@@ -11,13 +11,14 @@ type View = 'terminal' | 'settings' | 'newSession';
 
 export default function App() {
   // writerRef 桥接:useWebSocket 收到的终端输出 → 写入 xterm
-  const writerRef = useRef<((data: string) => void) | null>(null);
-  const handleData = useCallback((data: string) => writerRef.current?.(data), []);
-  const registerWriter = useCallback((write: (data: string) => void) => {
-    writerRef.current = write;
+  const writerRef = useRef<TerminalWriter | null>(null);
+  const handleData = useCallback((data: string) => writerRef.current?.write(data), []);
+  const handleReset = useCallback(() => writerRef.current?.clear(), []);
+  const registerWriter = useCallback((writer: TerminalWriter) => {
+    writerRef.current = writer;
   }, []);
 
-  const api = useWebSocket(handleData);
+  const api = useWebSocket(handleData, handleReset);
   const { recordWorkspace } = useApp();
   const [view, setView] = useState<View>('terminal');
 

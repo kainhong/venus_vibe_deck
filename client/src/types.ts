@@ -13,7 +13,7 @@ export interface SessionInfo {
 export type ClientMessage =
   | { action: 'input'; sessionId: string; data: string }
   | { action: 'resize'; sessionId: string; cols: number; rows: number }
-  | { action: 'system'; command: 'hello' }
+  | { action: 'system'; command: 'hello'; targetSessionId?: string }
   | {
       action: 'system';
       command: 'create_session';

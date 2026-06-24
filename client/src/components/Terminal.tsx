@@ -3,13 +3,18 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 
+export interface TerminalWriter {
+  write: (data: string) => void;
+  clear: () => void;
+}
+
 interface TerminalViewProps {
   /** 终端输入(键盘/IME)→ 回调 */
   onData?: (data: string) => void;
   /** 终端尺寸变化(cols/rows)→ 回调,用于同步后端 PTY */
   onResize?: (cols: number, rows: number) => void;
-  /** 注册写入函数,供外部把后端输出喂进 xterm */
-  registerWriter?: (write: (data: string) => void) => void;
+  /** 注册终端控制函数,供外部写入输出或清空 xterm */
+  registerWriter?: (writer: TerminalWriter) => void;
   /**
    * 终端键盘开关。现阶段默认 true(spec-ui §3:语音未支持,保留键盘);
    * Phase 2 语音就绪后置 false,终端纯显示不拉起软键盘。
@@ -68,7 +73,10 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
     };
 
     term.onData((data) => onDataRef.current?.(data));
-    registerWriterRef.current?.((d: string) => term.write(d));
+    registerWriterRef.current?.({
+      write: (d: string) => term.write(d),
+      clear: () => term.reset(),
+    });
 
     // 初始 fit + 下一帧再 fit(等布局稳定)
     doFit();

@@ -7,8 +7,6 @@ import { serveStatic } from './static.js';
 import { handleApi } from './http/router.js';
 
 const manager = new SessionManager();
-// 启动即建默认 bash 会话,客户端连上即可用
-manager.ensureDefault();
 
 // 单进程:同一 http server 既托管 client 静态页、又承载 WebSocket(同源同端口)。
 // 页面与 WS 共用 http://host:port,前端无需关心跨端口/跨域。

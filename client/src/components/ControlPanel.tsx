@@ -1,14 +1,36 @@
+import cancelIcon from '../asserts/icons/cancel.svg';
+import enterIcon from '../asserts/icons/enter.svg';
+import arrowIcon from '../asserts/icons/to_left.svg';
+import voiceIcon from '../asserts/icons/voice.svg';
+
 /**
- * 底部控制栏 — 单行紧凑布局,纯图标(无文字副标题,移动端省空间)。
+ * 底部输入栏 — 保留快捷键,视觉上按聊天 composer 组织。
  * 热键发送原始控制字符(spec §3.2);语音按钮本次占位。
- * 图标用 Unicode 几何符号,语义一目了然且渲染稳定(优于随意搭配的 emoji)。
  */
-const CONTROLS = [
-  { id: 'up', glyph: '↑', data: '\x1b[A' }, // 多选菜单上移
-  { id: 'down', glyph: '↓', data: '\x1b[B' }, // 下移
-  { id: 'toggle', glyph: '☑', data: ' ' }, // 选择/取消(Space 切换)
-  { id: 'confirm', glyph: '↵', data: '\r' }, // 确认/执行(Enter)
-  { id: 'interrupt', glyph: '✕', data: '\x03' }, // 中断/拒绝(Ctrl+C)
+const TOP_CONTROLS = [
+  { id: 'up', icon: arrowIcon, iconClass: 'rotate-up', data: '\x1b[A', label: '上移' },
+  { id: 'down', icon: arrowIcon, iconClass: 'rotate-down', data: '\x1b[B', label: '下移' },
+  { id: 'toggle', glyph: '␣', data: ' ', label: '空格' },
+] as const;
+
+const TEXT_CONTROLS = [
+  { id: 'mention', glyph: '@', data: '@', label: '输入 @' },
+  { id: 'slash', glyph: '/', data: '/', label: '输入 /' },
+] as const;
+
+const TOOL_CONTROLS = [
+  TEXT_CONTROLS[0],
+  TEXT_CONTROLS[1],
+  TOP_CONTROLS[0],
+  TOP_CONTROLS[1],
+  TOP_CONTROLS[2],
+  { id: 'more', glyph: '+', label: '更多' },
+] as const;
+
+const ACTION_CONTROLS = [
+  { id: 'interrupt', icon: cancelIcon, data: '\x03', label: '中断' },
+  { id: 'voice', icon: voiceIcon, label: '语音输入' },
+  { id: 'confirm', icon: enterIcon, data: '\r', label: '确认' },
 ] as const;
 
 interface ControlPanelProps {
@@ -22,33 +44,38 @@ export function ControlPanel({ onKey, onVoice }: ControlPanelProps) {
   const handleVoice = onVoice ?? (() => alert('语音输入开发中'));
   return (
     <div className="control-panel">
-      <div className="control-row">
-        {CONTROLS.map((k) => (
+      <div className="quick-row" aria-label="快捷操作">
+        {TOOL_CONTROLS.map((k) => (
           <button
             key={k.id}
-            className={`ctrl-btn${k.id === 'interrupt' ? ' danger' : ''}`}
+            className={`tool-btn${'glyph' in k ? ' text-key' : ''}`}
             type="button"
-            // pointerdown 即发,响应更快;preventDefault 防止触发软键盘/焦点
             onPointerDown={(e) => {
               e.preventDefault();
-              onKey(k.data);
+              if ('data' in k) onKey(k.data);
             }}
-            aria-label={k.id}
+            aria-label={k.label}
           >
-            {k.glyph}
+            {'glyph' in k ? k.glyph : <img className={'iconClass' in k ? k.iconClass : ''} src={k.icon} alt="" aria-hidden />}
           </button>
         ))}
-        <button
-          className="ctrl-btn voice"
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            handleVoice();
-          }}
-          aria-label="语音输入"
-        >
-          🎤
-        </button>
+      </div>
+      <div className="action-row" aria-label="会话操作">
+        {ACTION_CONTROLS.map((k) => (
+          <button
+            key={k.id}
+            className={`action-btn ${k.id}${k.id === 'interrupt' ? ' danger' : ''}`}
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              if (k.id === 'voice') handleVoice();
+              else if ('data' in k) onKey(k.data);
+            }}
+            aria-label={k.label}
+          >
+            <img src={k.icon} alt="" aria-hidden />
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -49,6 +49,14 @@ export class ClientConnection {
     this.unsubscribe = undefined;
   }
 
+  private resolveSessionId(token: string | undefined): string | undefined {
+    if (!token) return undefined;
+    const sessions = this.manager.list();
+    if (sessions.some((s) => s.id === token)) return token;
+    const matches = sessions.filter((s) => s.id.startsWith(token));
+    return matches.length === 1 ? matches[0].id : undefined;
+  }
+
   private onMessage(raw: RawData): void {
     let msg: ClientMessage;
     try {
@@ -80,8 +88,9 @@ export class ClientConnection {
     switch (msg.command) {
       case 'hello': {
         const sessions = this.manager.list();
-        if (!this.currentSessionId && sessions[0]) this.attach(sessions[0].id);
         this.send({ type: 'session_list', sessions });
+        const target = this.resolveSessionId(msg.targetSessionId) ?? this.currentSessionId ?? sessions[0]?.id;
+        if (target) this.attach(target);
         break;
       }
       case 'create_session': {
@@ -107,7 +116,9 @@ export class ClientConnection {
         break;
       }
       case 'switch_session': {
-        this.attach(msg.targetSessionId);
+        const target = this.resolveSessionId(msg.targetSessionId);
+        if (target) this.attach(target);
+        else this.send({ type: 'error', message: `session not found: ${msg.targetSessionId}` });
         break;
       }
       case 'destroy_session': {

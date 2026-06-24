@@ -99,11 +99,15 @@ export class PtySession {
   /**
    * 终止 PTY 进程:用 SIGKILL 替代默认 SIGHUP。
    * SIGHUP 杀不掉 trap '' HUP / nohup / daemon 的进程(session-lifecycle.md §4 盲点 A);
-   * SIGKILL 不可被忽略,低成本改善。注:仍只杀主进程,job control 分出的
-   * 子进程组需按 sid 遍历清理(见 session-lifecycle.md T2),此处不涉及。
+   * SIGKILL 不可被忽略。优先杀 PTY 进程组,再兜底杀主进程。
    */
   destroy(): void {
     this.alive = false;
+    try {
+      process.kill(-this.pty.pid, 'SIGKILL');
+    } catch {
+      // 平台不支持负 pid / 进程组已退出时兜底杀主进程
+    }
     try {
       this.pty.kill('SIGKILL');
     } catch {

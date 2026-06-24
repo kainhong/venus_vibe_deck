@@ -7,6 +7,32 @@ function buildWsUrl(): string {
   return `${proto}//${location.host}`;
 }
 
+const SESSION_PARAM = 'session';
+const SESSION_ID_LEN = 8;
+
+function shortSessionId(id: string): string {
+  return id.slice(0, SESSION_ID_LEN);
+}
+
+function readSessionToken(): string | undefined {
+  const token = new URLSearchParams(globalThis.location.search).get(SESSION_PARAM)?.trim();
+  return token || undefined;
+}
+
+function writeSessionToken(id: string | undefined): void {
+  const url = new URL(globalThis.location.href);
+  if (id) url.searchParams.set(SESSION_PARAM, shortSessionId(id));
+  else url.searchParams.delete(SESSION_PARAM);
+  globalThis.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+function resolveSessionId(sessions: SessionInfo[], token: string | undefined): string | undefined {
+  if (!token) return undefined;
+  if (sessions.some((s) => s.id === token)) return token;
+  const matches = sessions.filter((s) => s.id.startsWith(token));
+  return matches.length === 1 ? matches[0].id : undefined;
+}
+
 /** 新建会话的可选项(对应 protocol 的 create_session 字段) */
 export interface CreateSessionOptions {
   name?: string;
@@ -39,9 +65,11 @@ export interface WebSocketApi {
  * WebSocket 连接管理:连接、收发、会话切换。
  * 用 ref 持有最新回调/状态,保证 effect 只建立一次连接却能读到最新值。
  */
-export function useWebSocket(onTerminalData: (data: string) => void): WebSocketApi {
+export function useWebSocket(onTerminalData: (data: string) => void, onTerminalReset?: () => void): WebSocketApi {
   const onDataRef = useRef(onTerminalData);
+  const onResetRef = useRef(onTerminalReset);
   onDataRef.current = onTerminalData;
+  onResetRef.current = onTerminalReset;
 
   const wsRef = useRef<WebSocket | null>(null);
   const currentRef = useRef<string | undefined>(undefined);
@@ -67,7 +95,7 @@ export function useWebSocket(onTerminalData: (data: string) => void): WebSocketA
 
     ws.onopen = () => {
       setConnected(true);
-      send({ action: 'system', command: 'hello' });
+      send({ action: 'system', command: 'hello', targetSessionId: readSessionToken() });
     };
     ws.onclose = () => setConnected(false);
     ws.onerror = () => setConnected(false);
@@ -85,19 +113,33 @@ export function useWebSocket(onTerminalData: (data: string) => void): WebSocketA
         case 'session_list':
           sessionsRef.current = msg.sessions;
           setSessions(msg.sessions);
-          // 首次拿到列表时自动绑定第一个会话
-          setCurrentSessionId((prev) => prev ?? msg.sessions[0]?.id);
+          // 首次拿到列表时自动绑定第一个会话;空列表时明确清空当前会话。
+          setCurrentSessionId((prev) => {
+            const next =
+              resolveSessionId(msg.sessions, readSessionToken()) ??
+              (prev && msg.sessions.some((s) => s.id === prev) ? prev : undefined) ??
+              msg.sessions[0]?.id;
+            if (next !== currentRef.current) onResetRef.current?.();
+            writeSessionToken(next);
+            currentRef.current = next;
+            return next;
+          });
           break;
         case 'session_created':
           // 同步更新 ref(不等 render):紧随其后的 attach scrollback 才能按 sid 匹配
+          onResetRef.current?.();
           currentRef.current = msg.sessionId;
           setCurrentSessionId(msg.sessionId);
+          writeSessionToken(msg.sessionId);
           break;
         case 'session_destroyed':
           // 当前会话被关:切到第一个仍存活的,并通知后端 attach(无存活则置空)
           if (currentRef.current === msg.sessionId) {
             const next = sessionsRef.current.find((s) => s.id !== msg.sessionId && s.alive)?.id;
+            onResetRef.current?.();
+            currentRef.current = next;
             setCurrentSessionId(next);
+            writeSessionToken(next);
             if (next) send({ action: 'system', command: 'switch_session', targetSessionId: next });
           }
           break;
@@ -130,7 +172,10 @@ export function useWebSocket(onTerminalData: (data: string) => void): WebSocketA
 
   const switchSession = useCallback(
     (id: string) => {
+      if (id !== currentRef.current) onResetRef.current?.();
+      currentRef.current = id;
       setCurrentSessionId(id);
+      writeSessionToken(id);
       send({ action: 'system', command: 'switch_session', targetSessionId: id });
     },
     [send],
