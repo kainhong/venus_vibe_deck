@@ -32,7 +32,7 @@ export type SpeechResult =
     };
 ```
 
-当前阶段只产生 `type: 'text'`。`command` 结构先保留,但不做语音命令解析。
+浏览器原生与后端 provider 都使用同一份 `voiceSettings.commands` 做语音命令匹配;命中别名时产生 `type: 'command'`,否则产生 `type: 'text'`。
 
 ## Send Behavior
 
@@ -82,6 +82,8 @@ export type SpeechResult =
 失败策略:
 - 如果当前浏览器无 `SpeechRecognition` 能力,语音按钮提示“当前浏览器不支持本地识别”。
 - 不自动降级到后端,除非用户在设置中选择后端 provider。
+
+识别完成后会先在前端使用 `server/config/settings.json` 返回的 `voiceSettings.commands` 匹配 aliases。命中则返回 command,没命中才作为普通文本发送。
 
 ### 2. `server-openai-compatible` - Next
 

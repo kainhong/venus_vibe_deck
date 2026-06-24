@@ -42,6 +42,7 @@ export default function App() {
     lang: 'zh-CN',
     submitMode: immersive ? 'submit' : 'insert',
     useServerVoice: config?.voiceSettings?.useServerVoice ?? false,
+    commands: config?.voiceSettings?.commands ?? [],
     onResult: handleSpeechResult,
     onError: (message) => alert(message),
   });

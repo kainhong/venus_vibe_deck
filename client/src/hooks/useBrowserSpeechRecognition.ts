@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/http';
-import type { SpeechResult } from '../types';
+import type { SpeechResult, VoiceCommandConfig } from '../types';
 
 export type { SpeechResult } from '../types';
 
@@ -59,6 +59,7 @@ export interface UseBrowserSpeechRecognitionOptions {
   lang?: string;
   submitMode?: 'insert' | 'submit';
   useServerVoice?: boolean;
+  commands?: VoiceCommandConfig[];
   onResult: (result: SpeechResult) => void;
   onError?: (message: string) => void;
 }
@@ -78,6 +79,7 @@ export function useBrowserSpeechRecognition({
   lang = 'zh-CN',
   submitMode = 'insert',
   useServerVoice = false,
+  commands = [],
   onResult,
   onError,
 }: UseBrowserSpeechRecognitionOptions): UseBrowserSpeechRecognitionReturn {
@@ -98,6 +100,7 @@ export function useBrowserSpeechRecognition({
   const onErrorRef = useRef(onError);
   const submitModeRef = useRef(submitMode);
   const useServerVoiceRef = useRef(useServerVoice);
+  const commandsRef = useRef(commands);
   const [state, setState] = useState<SpeechState>(() => {
     if (typeof window === 'undefined') return 'unsupported';
     return window.SpeechRecognition || window.webkitSpeechRecognition ? 'idle' : 'unsupported';
@@ -107,6 +110,7 @@ export function useBrowserSpeechRecognition({
   onErrorRef.current = onError;
   submitModeRef.current = submitMode;
   useServerVoiceRef.current = useServerVoice;
+  commandsRef.current = commands;
 
   const cleanup = useCallback(() => {
     const recognition = recognitionRef.current;
@@ -291,6 +295,11 @@ export function useBrowserSpeechRecognition({
       setState('idle');
       if (suppressed) return;
       if (!message) return;
+      const commandResult = matchVoiceCommand(message, commandsRef.current);
+      if (commandResult) {
+        onResultRef.current(commandResult);
+        return;
+      }
       onResultRef.current({
         type: 'text',
         message: submitModeRef.current === 'submit' ? `${message}\r` : message,
@@ -344,6 +353,29 @@ export function useBrowserSpeechRecognition({
     cancel,
     toggle: state === 'listening' ? stop : start,
   };
+}
+
+function normalizeSpeechText(text: string): string {
+  return text
+    .replace(/[，。！？、,.!?]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function matchVoiceCommand(text: string, commands: VoiceCommandConfig[]): SpeechResult | null {
+  const normalized = normalizeSpeechText(text);
+  for (const command of commands) {
+    const matched = command.aliases.find((alias) => normalizeSpeechText(alias) === normalized);
+    if (!matched) continue;
+    return {
+      type: 'command',
+      command: command.id,
+      message: command.label || matched,
+      provider: 'browser-native-regex',
+    };
+  }
+  return null;
 }
 
 function flattenChunks(chunks: Float32Array[]): Float32Array {
