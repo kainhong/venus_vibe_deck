@@ -3,11 +3,13 @@ import { join } from 'node:path';
 
 /**
  * 持久化路径集中定义 —— 单一改动点。
- * VENUS_DATA_DIR 可覆盖数据目录(测试/容器挂载卷),默认 ~/.venus-hube/。
+ * 配置放在运行目录下 config/ 文件夹,方便用户就近维护。
+ * 历史等运行时数据放 ~/.venus-hube/。
  */
 export const DATA_DIR = process.env.VENUS_DATA_DIR ?? join(homedir(), '.venus-hube');
-export const CONFIG_FILE = join(DATA_DIR, 'config.json'); // CLI 配置
-export const HISTORY_FILE = join(DATA_DIR, 'history.json'); // workspace 历史
+export const CONFIG_DIR = join(process.cwd(), 'config');
+export const CONFIG_FILE = join(CONFIG_DIR, 'settings.json');
+export const HISTORY_FILE = join(DATA_DIR, 'history.json');
 
 /**
  * list-dir 浏览白名单根(逗号分隔)。

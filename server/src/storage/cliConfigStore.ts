@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import { readJson, writeJson } from './jsonStore.js';
 import { CONFIG_FILE } from './paths.js';
 
@@ -24,7 +25,8 @@ function defaultConfig(): ConfigDoc {
   return {
     cliConfigs: [
       { id: 'claude-default', name: 'Claude', command: 'claude', args: [], resumeArg: '-c', isDefault: true },
-      { id: 'bash-default', name: 'Bash', command: 'bash', args: [], resumeArg: '', isDefault: false },
+      { id: 'codex-default', name: 'Codex', command: 'codex', args: [], resumeArg: '', isDefault: false },
+      { id: 'opencode-default', name: 'OpenCode', command: 'opencode', args: [], resumeArg: '', isDefault: false },
     ],
   };
 }
@@ -43,8 +45,17 @@ function normalize(doc: ConfigDoc): ConfigDoc {
 }
 
 export async function loadConfig(): Promise<ConfigDoc> {
+  if (!existsSync(CONFIG_FILE)) {
+    const doc = defaultConfig();
+    await writeJson(CONFIG_FILE, doc);
+    return doc;
+  }
   const doc = await readJson<ConfigDoc | null>(CONFIG_FILE, null);
-  if (!doc || !Array.isArray(doc.cliConfigs)) return defaultConfig();
+  if (!doc || !Array.isArray(doc.cliConfigs)) {
+    const fallback = defaultConfig();
+    await writeJson(CONFIG_FILE, fallback);
+    return fallback;
+  }
   return doc;
 }
 

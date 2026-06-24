@@ -1,0 +1,28 @@
+{
+  "cliConfigs": [
+    {
+      "id": "claude-default",
+      "name": "Claude",
+      "command": "claude",
+      "args": ["--dangerously-skip-permissions"],
+      "resumeArg": "-c",
+      "isDefault": true
+    },
+    {
+      "id": "codex-default",
+      "name": "Codex",
+      "command": "codex",
+      "args": ["--dangerously-bypass-approvals-and-sandbox"],
+      "resumeArg": "resume",
+      "isDefault": false
+    },
+    {
+      "id": "opencode-default",
+      "name": "OpenCode",
+      "command": "opencode",
+      "args": [],
+      "resumeArg": "-c",
+      "isDefault": false
+    }
+  ]
+}
