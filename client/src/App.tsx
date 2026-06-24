@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import { useWebSocket, type CreateSessionOptions } from './hooks/useWebSocket';
 import { useApp } from './state/AppContext';
 import { TerminalView, type TerminalWriter } from './components/Terminal';
@@ -102,6 +102,11 @@ export default function App() {
     speech.stop();
   }, [clearImmersiveTimer, speech]);
 
+  const immersiveVoiceStyle = immersiveVoicePoint ? {
+    '--voice-x': `${immersiveVoicePoint.x}px`,
+    '--voice-y': `${immersiveVoicePoint.y}px`,
+  } as CSSProperties : undefined;
+
   const handleCreate = useCallback(
     (opts: CreateSessionOptions) => {
       api.createSession(opts);
@@ -132,6 +137,7 @@ export default function App() {
         {immersive && (
           <div
             className={`immersive-hit-layer${speech.listening ? ' listening' : ''}${speech.state === 'processing' ? ' processing' : ''}`}
+            style={immersiveVoiceStyle}
             onPointerDown={(e) => {
               e.preventDefault();
               e.currentTarget.setPointerCapture(e.pointerId);
@@ -177,7 +183,7 @@ export default function App() {
 
       {immersive && (
         <button type="button" className="immersive-close" onClick={exitImmersive} aria-label="退出沉浸模式">
-          ×
+          <span aria-hidden />
         </button>
       )}
 

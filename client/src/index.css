@@ -774,57 +774,124 @@ textarea {
 }
 
 .immersive-hit-layer.listening {
-  background: rgba(229, 72, 77, 0.08);
+  background: radial-gradient(circle at var(--voice-x, 50%) var(--voice-y, 50%), rgba(229, 72, 77, 0.12) 0 72px, rgba(229, 72, 77, 0.045) 118px, transparent 220px);
+  animation: immersive-voice-wash 1.8s ease-in-out infinite;
 }
 
 .immersive-hit-layer.processing {
-  background: rgba(47, 124, 246, 0.06);
+  background: radial-gradient(circle at var(--voice-x, 50%) var(--voice-y, 50%), rgba(47, 124, 246, 0.12) 0 68px, rgba(47, 124, 246, 0.04) 118px, transparent 220px);
 }
 
 .immersive-voice-float {
   position: fixed;
   transform: translate(-50%, -50%);
-  min-width: 132px;
-  padding: 14px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 16px;
-  background: rgba(229, 72, 77, 0.82);
+  min-width: 126px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(28, 31, 38, 0.78);
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
   text-align: center;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(229, 72, 77, 0.22);
+  backdrop-filter: blur(16px);
   pointer-events: none;
+  animation: immersive-voice-pop 0.18s ease-out, immersive-voice-breathe 1.15s ease-in-out infinite;
+}
+
+.immersive-voice-float::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(229, 72, 77, 0.22);
+  opacity: 0.9;
+  animation: immersive-voice-ring 1.15s ease-out infinite;
 }
 
 .immersive-hit-layer.processing .immersive-voice-float {
-  background: rgba(47, 124, 246, 0.82);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(47, 124, 246, 0.22);
+  animation: immersive-voice-pop 0.18s ease-out;
+}
+
+.immersive-hit-layer.processing .immersive-voice-float::before {
+  background: rgba(47, 124, 246, 0.18);
+  animation: none;
 }
 
 .immersive-close {
   position: fixed;
-  top: max(12px, env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
   z-index: 220;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 28px;
-  line-height: 1;
+  background: rgba(24, 27, 34, 0.54);
+  color: rgba(255, 255, 255, 0.88);
   display: grid;
   place-items: center;
   cursor: pointer;
-  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
   -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.immersive-close span {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.immersive-close span::before,
+.immersive-close span::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 1px;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.immersive-close span::before {
+  transform: rotate(45deg);
+}
+
+.immersive-close span::after {
+  transform: rotate(-45deg);
 }
 
 .immersive-close:active {
-  background: rgba(255, 255, 255, 0.26);
-  transform: scale(0.96);
+  background: rgba(24, 27, 34, 0.72);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: scale(0.94);
+}
+
+@keyframes immersive-voice-pop {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes immersive-voice-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.035); }
+}
+
+@keyframes immersive-voice-ring {
+  from { opacity: 0.72; transform: scale(0.82); }
+  to { opacity: 0; transform: scale(1.48); }
+}
+
+@keyframes immersive-voice-wash {
+  0%, 100% { opacity: 0.88; }
+  50% { opacity: 1; }
 }
 
 @media (max-width: 430px) {
