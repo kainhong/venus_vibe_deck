@@ -1,11 +1,8 @@
+import { useState } from 'react';
 import enterIcon from '../asserts/icons/enter.svg';
 import arrowIcon from '../asserts/icons/to_left.svg';
 import voiceIcon from '../asserts/icons/voice.svg';
 
-/**
- * 底部输入栏 — 保留快捷键,视觉上按聊天 composer 组织。
- * 热键发送原始控制字符(spec §3.2);语音按钮本次占位。
- */
 const TOP_CONTROLS = [
   { id: 'up', icon: arrowIcon, iconClass: 'rotate-up', data: '\x1b[A', label: '上移' },
   { id: 'down', icon: arrowIcon, iconClass: 'rotate-down', data: '\x1b[B', label: '下移' },
@@ -34,24 +31,48 @@ const ACTION_CONTROLS = [
 
 interface ControlPanelProps {
   onKey: (data: string) => void;
-  /** 语音回调,默认提示开发中(spec-ui §6 本次仅占位) */
   onVoice?: () => void;
+  keyboardEnabled: boolean;
+  onToggleKeyboard: () => void;
+  onPaste: () => void;
 }
 
-export function ControlPanel({ onKey, onVoice }: ControlPanelProps) {
-  // 语音按钮始终渲染(本次占位);未提供回调时提示开发中
+export function ControlPanel({ onKey, onVoice, keyboardEnabled, onToggleKeyboard, onPaste }: ControlPanelProps) {
+  const [showMore, setShowMore] = useState(false);
   const handleVoice = onVoice ?? (() => alert('语音输入开发中'));
+
   return (
     <div className="control-panel">
+      {showMore && (
+        <div className="more-panel">
+          <button
+            className="more-panel-item"
+            type="button"
+            onPointerDown={(e) => { e.preventDefault(); onPaste(); setShowMore(false); }}
+          >
+            <span className="more-panel-icon paste">📋</span>
+            <span className="more-panel-label">粘贴</span>
+          </button>
+          <button
+            className="more-panel-item"
+            type="button"
+            onPointerDown={(e) => { e.preventDefault(); onToggleKeyboard(); setShowMore(false); }}
+          >
+            <span className={`more-panel-icon keyboard ${keyboardEnabled ? 'active' : ''}`}>⌨️</span>
+            <span className="more-panel-label">{keyboardEnabled ? '关闭键盘' : '开启键盘'}</span>
+          </button>
+        </div>
+      )}
       <div className="quick-row" aria-label="快捷操作">
         {TOOL_CONTROLS.map((k) => (
           <button
             key={k.id}
-            className={`tool-btn${'glyph' in k ? ' text-key' : ''}`}
+            className={`tool-btn${'glyph' in k ? ' text-key' : ''}${k.id === 'more' && showMore ? ' active' : ''}`}
             type="button"
             onPointerDown={(e) => {
               e.preventDefault();
-              if ('data' in k) onKey(k.data);
+              if (k.id === 'more') setShowMore((v) => !v);
+              else if ('data' in k) onKey(k.data);
             }}
             aria-label={k.label}
           >

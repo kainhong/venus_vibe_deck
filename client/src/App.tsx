@@ -10,7 +10,6 @@ import { NewSessionPanel } from './components/NewSessionPanel';
 type View = 'terminal' | 'settings' | 'newSession';
 
 export default function App() {
-  // writerRef 桥接:useWebSocket 收到的终端输出 → 写入 xterm
   const writerRef = useRef<TerminalWriter | null>(null);
   const handleData = useCallback((data: string) => writerRef.current?.write(data), []);
   const handleReset = useCallback(() => writerRef.current?.clear(), []);
@@ -21,6 +20,18 @@ export default function App() {
   const api = useWebSocket(handleData, handleReset);
   const { recordWorkspace } = useApp();
   const [view, setView] = useState<View>('terminal');
+  const [keyboardEnabled, setKeyboardEnabled] = useState(false);
+
+  const handlePaste = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) api.sendInput(text);
+    } catch { /* clipboard permission denied */ }
+  }, [api]);
+
+  const handleToggleKeyboard = useCallback(() => {
+    setKeyboardEnabled((v) => !v);
+  }, []);
 
   const handleCreate = useCallback(
     (opts: CreateSessionOptions) => {
@@ -48,10 +59,15 @@ export default function App() {
       />
 
       <main className="terminal-area">
-        <TerminalView onData={api.sendInput} onResize={api.sendResize} registerWriter={registerWriter} />
+        <TerminalView onData={api.sendInput} onResize={api.sendResize} registerWriter={registerWriter} keyboardEnabled={keyboardEnabled} />
       </main>
 
-      <ControlPanel onKey={api.sendInput} />
+      <ControlPanel
+        onKey={api.sendInput}
+        keyboardEnabled={keyboardEnabled}
+        onToggleKeyboard={handleToggleKeyboard}
+        onPaste={handlePaste}
+      />
 
       {view === 'settings' && <SettingsPage onClose={() => setView('terminal')} />}
       {view === 'newSession' && (

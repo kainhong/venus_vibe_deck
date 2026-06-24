@@ -204,6 +204,67 @@ textarea {
   border-top: 1px solid var(--line);
 }
 
+.more-panel {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px 12px;
+  padding: 12px 8px;
+  animation: more-panel-in 0.18s ease-out;
+}
+
+@keyframes more-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.more-panel-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.more-panel-item:active .more-panel-icon {
+  transform: scale(0.92);
+}
+
+.more-panel-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  transition: transform 0.1s;
+}
+
+.more-panel-icon.paste {
+  background: #fff3e0;
+}
+
+.more-panel-icon.keyboard {
+  background: #e3f2fd;
+}
+
+.more-panel-icon.keyboard.active {
+  background: #c8e6c9;
+}
+
+.more-panel-label {
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.tool-btn.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .quick-row,
 .action-row {
   display: flex;
