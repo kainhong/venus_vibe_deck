@@ -976,6 +976,20 @@ textarea {
   animation: none;
 }
 
+.immersive-hit-layer.pending {
+  background: radial-gradient(circle at var(--voice-x, 50%) var(--voice-y, 50%), rgba(245, 158, 11, 0.14) 0 72px, rgba(245, 158, 11, 0.05) 118px, transparent 220px);
+}
+
+.immersive-hit-layer.pending .immersive-voice-float {
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(245, 158, 11, 0.3);
+  animation: immersive-voice-pop 0.18s ease-out;
+}
+
+.immersive-hit-layer.pending .immersive-voice-float::before {
+  background: rgba(245, 158, 11, 0.18);
+  animation: none;
+}
+
 .immersive-close {
   position: fixed;
   top: max(14px, env(safe-area-inset-top));

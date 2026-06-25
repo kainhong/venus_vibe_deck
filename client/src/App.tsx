@@ -27,6 +27,12 @@ export default function App() {
   const [view, setView] = useState<View>('terminal');
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
   const [immersive, setImmersive] = useState(false);
+  const [immersivePending, setImmersivePending] = useState(false);
+  const immersivePendingRef = useRef(false);
+  const setPending = useCallback((v: boolean) => {
+    immersivePendingRef.current = v;
+    setImmersivePending(v);
+  }, []);
   const [bellActive, setBellActive] = useState(false);
   const pendingHiddenBellRef = useRef(false);
   const [immersiveVoicePoint, setImmersiveVoicePoint] = useState<{ x: number; y: number } | null>(null);
@@ -34,17 +40,24 @@ export default function App() {
   const immersiveLongPressRef = useRef(false);
 
   const handleSpeechResult = useCallback((result: SpeechResult) => {
-    if (result.type === 'text') api.sendInput(result.message);
-    else {
+    if (result.type === 'text') {
+      api.sendInput(result.message);
+      if (immersive) setPending(true);
+    } else {
+      // command:若沉浸下有 pending 文本,先提交再执行命令
+      if (immersive && immersivePendingRef.current) {
+        api.sendInput('\r');
+        setPending(false);
+      }
       const command = config?.voiceSettings?.commands.find((item) => item.id === result.command);
       const input = command?.keyboard ?? '';
       if (input) api.sendInput(input);
     }
-  }, [api, config]);
+  }, [api, config, immersive, setPending]);
 
   const speech = useBrowserSpeechRecognition({
     lang: 'zh-CN',
-    submitMode: immersive ? 'submit' : 'insert',
+    submitMode: 'insert',
     useServerVoice: config?.voiceSettings?.useServerVoice ?? false,
     commands: config?.voiceSettings?.commands ?? [],
     onResult: handleSpeechResult,
@@ -100,13 +113,14 @@ export default function App() {
   const exitImmersive = useCallback(() => {
     setImmersive(false);
     setImmersiveVoicePoint(null);
+    setPending(false);
     speech.cancel();
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {
         // ignore
       });
     }
-  }, [speech]);
+  }, [speech, setPending]);
 
   const clearImmersiveTimer = useCallback(() => {
     if (immersivePressTimerRef.current !== undefined) {
@@ -139,6 +153,12 @@ export default function App() {
     immersiveLongPressRef.current = false;
     speech.stop();
   }, [clearImmersiveTimer, speech]);
+
+  const submitImmersivePending = useCallback(() => {
+    if (!immersivePendingRef.current) return;
+    api.sendInput('\r');
+    setPending(false);
+  }, [api, setPending]);
 
   const immersiveVoiceStyle = immersiveVoicePoint ? {
     '--voice-x': `${immersiveVoicePoint.x}px`,
@@ -175,11 +195,16 @@ export default function App() {
         <TerminalView onData={api.sendInput} onResize={api.sendResize} registerWriter={registerWriter} keyboardEnabled={keyboardEnabled && !immersive} />
         {immersive && (
           <div
-            className={`immersive-hit-layer${speech.listening ? ' listening' : ''}${speech.state === 'processing' ? ' processing' : ''}`}
+            className={`immersive-hit-layer${speech.listening ? ' listening' : ''}${speech.state === 'processing' ? ' processing' : ''}${immersivePending ? ' pending' : ''}`}
             style={immersiveVoiceStyle}
             onPointerDown={(e) => {
               e.preventDefault();
               if (speech.state === 'processing') return;
+              // 待提交状态下点击:提交当前文本;长按则继续追加新语音
+              if (immersivePendingRef.current) {
+                submitImmersivePending();
+                return;
+              }
               e.currentTarget.setPointerCapture(e.pointerId);
               startImmersivePress({ x: e.clientX, y: e.clientY });
             }}
@@ -200,12 +225,12 @@ export default function App() {
               setImmersiveVoicePoint(null);
             }}
           >
-            {(speech.listening || speech.state === 'processing') && immersiveVoicePoint && (
+            {(speech.listening || speech.state === 'processing' || immersivePending) && immersiveVoicePoint && (
               <div
                 className="immersive-voice-float"
                 style={{ left: immersiveVoicePoint.x, top: immersiveVoicePoint.y }}
               >
-                {speech.listening ? '松开发送语音' : '识别中'}
+                {speech.listening ? '松手结束' : speech.state === 'processing' ? '识别中' : '点击提交'}
               </div>
             )}
           </div>

@@ -132,6 +132,21 @@
           "往回删",
           "backspace"
         ]
+      },
+      {
+        "id": "clear",
+        "label": "清空",
+        "input": "ctrl+u",
+        "keyboard": "\u0015",
+        "aliases": [
+          "清空",
+          "清除",
+          "全部删除",
+          "全删",
+          "清空输入",
+          "清掉",
+          "clear"
+        ]
       }
     ]
   }
