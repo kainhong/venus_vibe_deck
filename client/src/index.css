@@ -924,7 +924,7 @@ textarea {
   inset: 0;
   z-index: 205;
   background: transparent;
-  touch-action: none;
+  touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -940,19 +940,35 @@ textarea {
 .immersive-voice-float {
   position: fixed;
   transform: translate(-50%, -50%);
-  min-width: 126px;
-  padding: 12px 16px;
+  width: 64px;
+  height: 64px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   background: rgba(28, 31, 38, 0.78);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 650;
-  text-align: center;
+  display: grid;
+  place-items: center;
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(229, 72, 77, 0.22);
   backdrop-filter: blur(16px);
   pointer-events: none;
   animation: immersive-voice-pop 0.18s ease-out, immersive-voice-breathe 1.15s ease-in-out infinite;
+}
+
+.immersive-voice-icon {
+  width: 28px;
+  height: 28px;
+  filter: brightness(0) invert(1);
+}
+
+.immersive-hit-layer.listening .immersive-voice-icon {
+  filter: invert(40%) sepia(90%) saturate(1200%) hue-rotate(330deg) brightness(95%);
+}
+
+.immersive-hit-layer.processing .immersive-voice-icon {
+  filter: invert(40%) sepia(80%) saturate(800%) hue-rotate(200deg) brightness(95%);
+}
+
+.immersive-hit-layer.pending .immersive-voice-icon {
+  filter: invert(55%) sepia(80%) saturate(600%) hue-rotate(15deg) brightness(95%);
 }
 
 .immersive-voice-float::before {

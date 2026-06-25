@@ -8,8 +8,9 @@ import { SettingsPage } from './components/SettingsPage';
 import { NewSessionPanel } from './components/NewSessionPanel';
 import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrowserSpeechRecognition';
 import { usePushNotifications } from './hooks/usePushNotifications';
+import voiceIcon from './asserts/icons/voice.svg';
 
-const IMMERSIVE_LONG_PRESS_MS = 160;
+const IMMERSIVE_LONG_PRESS_MS = 400;
 
 type View = 'terminal' | 'settings' | 'newSession';
 
@@ -38,10 +39,19 @@ export default function App() {
   const [immersiveVoicePoint, setImmersiveVoicePoint] = useState<{ x: number; y: number } | null>(null);
   const immersivePressTimerRef = useRef<number | undefined>(undefined);
   const immersiveLongPressRef = useRef(false);
+  const immersiveStartYRef = useRef(0);
+  const immersiveScrollingRef = useRef(false);
 
   const handleSpeechResult = useCallback((result: SpeechResult) => {
     if (result.type === 'text') {
-      api.sendInput(result.message);
+      const text = result.message;
+      if (immersive && immersivePendingRef.current) {
+        const lastChar = text.charAt(0);
+        const needSep = !/^[，。！？、,.!?\s]/.test(lastChar);
+        api.sendInput(needSep ? '，' + text : text);
+      } else {
+        api.sendInput(text);
+      }
       if (immersive) setPending(true);
     } else {
       // command:若沉浸下有 pending 文本,先提交再执行命令
@@ -140,9 +150,10 @@ export default function App() {
     clearImmersiveTimer();
     immersivePressTimerRef.current = window.setTimeout(() => {
       immersiveLongPressRef.current = true;
+      setPending(false);
       speech.start();
     }, IMMERSIVE_LONG_PRESS_MS);
-  }, [clearImmersiveTimer, speech]);
+  }, [clearImmersiveTimer, speech, setPending]);
 
   const endImmersivePress = useCallback(() => {
     clearImmersiveTimer();
@@ -197,23 +208,53 @@ export default function App() {
           <div
             className={`immersive-hit-layer${speech.listening ? ' listening' : ''}${speech.state === 'processing' ? ' processing' : ''}${immersivePending ? ' pending' : ''}`}
             style={immersiveVoiceStyle}
+            onContextMenu={(e) => e.preventDefault()}
             onPointerDown={(e) => {
-              e.preventDefault();
               if (speech.state === 'processing') return;
-              // 待提交状态下点击:提交当前文本;长按则继续追加新语音
-              if (immersivePendingRef.current) {
-                submitImmersivePending();
-                return;
-              }
+              immersiveScrollingRef.current = false;
+              immersiveStartYRef.current = e.clientY;
               e.currentTarget.setPointerCapture(e.pointerId);
               startImmersivePress({ x: e.clientX, y: e.clientY });
             }}
+            onPointerMove={(e) => {
+              if (immersiveScrollingRef.current || immersiveLongPressRef.current) return;
+              const dy = Math.abs(e.clientY - immersiveStartYRef.current);
+              if (dy > 10) {
+                immersiveScrollingRef.current = true;
+                clearImmersiveTimer();
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                }
+                setImmersiveVoicePoint(null);
+              }
+            }}
             onPointerUp={(e) => {
-              e.preventDefault();
               if (e.currentTarget.hasPointerCapture(e.pointerId)) {
                 e.currentTarget.releasePointerCapture(e.pointerId);
               }
-              endImmersivePress();
+              if (immersiveScrollingRef.current) {
+                immersiveScrollingRef.current = false;
+                return;
+              }
+              if (immersiveLongPressRef.current) {
+                endImmersivePress();
+                return;
+              }
+              clearImmersiveTimer();
+              if (immersivePendingRef.current) {
+                const vp = immersiveVoicePoint;
+                if (vp) {
+                  const dx = Math.abs(e.clientX - vp.x);
+                  const dy = Math.abs(e.clientY - vp.y);
+                  if (dx < 40 && dy < 40) {
+                    submitImmersivePending();
+                  } else {
+                    api.sendInput('\x15');
+                    setPending(false);
+                  }
+                }
+              }
+              setImmersiveVoicePoint(null);
             }}
             onPointerCancel={(e) => {
               if (e.currentTarget.hasPointerCapture(e.pointerId)) {
@@ -230,7 +271,7 @@ export default function App() {
                 className="immersive-voice-float"
                 style={{ left: immersiveVoicePoint.x, top: immersiveVoicePoint.y }}
               >
-                {speech.listening ? '松手结束' : speech.state === 'processing' ? '识别中' : '点击提交'}
+                <img src={voiceIcon} alt="" className="immersive-voice-icon" aria-hidden />
               </div>
             )}
           </div>
