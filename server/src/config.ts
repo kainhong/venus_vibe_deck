@@ -32,6 +32,11 @@ export const config = {
     llmModel: process.env.VOICE_LLM_MODEL ?? 'gpt-4.1-mini',
     llmTimeoutMs: Number(process.env.VOICE_LLM_TIMEOUT_MS ?? 30000),
   },
+  webPush: {
+    publicKey: process.env.WEB_PUSH_PUBLIC_KEY ?? '',
+    privateKey: process.env.WEB_PUSH_PRIVATE_KEY ?? '',
+    subject: process.env.WEB_PUSH_SUBJECT ?? 'mailto:admin@example.com',
+  },
 } as const;
 
 function parseBoolean(value: string | undefined, fallback: boolean): boolean {

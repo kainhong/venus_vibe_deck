@@ -32,4 +32,7 @@ export const api = {
     getJson<DirListing>(path ? `/api/dir?path=${encodeURIComponent(path)}` : '/api/dir'),
   transcribeSpeech: (req: SpeechTranscribeRequest) =>
     sendJson<SpeechResult>('POST', '/api/speech/transcribe', req),
+  getPushPublicKey: () => getJson<{ publicKey: string }>('/api/push/public-key'),
+  subscribePush: (subscription: PushSubscriptionJSON) =>
+    sendJson<{ ok: boolean; count: number }>('POST', '/api/push/subscribe', subscription),
 };

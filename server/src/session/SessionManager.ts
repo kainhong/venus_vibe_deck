@@ -1,6 +1,7 @@
 import { PtySession, type PtySessionOptions } from './PtySession.js';
 import type { SessionInfo } from '../protocol.js';
 import { createLogger } from '../logger.js';
+import { sendPushNotification } from '../push/pushService.js';
 
 const logger = createLogger('session-manager');
 
@@ -85,6 +86,13 @@ export class SessionManager {
     const payload = { type: 'notification' as const, at: Date.now(), ...event };
     logger.info('notification broadcast', payload);
     this.emit(payload);
+    void sendPushNotification({
+      title: 'Venus',
+      body: event.message,
+      source: event.source,
+      sessionId: event.sessionId,
+      at: payload.at,
+    });
   }
 
   private emit(event: SessionManagerEvent): void {

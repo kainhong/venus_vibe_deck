@@ -10,6 +10,7 @@ export const DATA_DIR = process.env.VENUS_DATA_DIR ?? join(homedir(), '.venus-hu
 export const CONFIG_DIR = join(process.cwd(), 'config');
 export const CONFIG_FILE = join(CONFIG_DIR, 'settings.json');
 export const HISTORY_FILE = join(DATA_DIR, 'history.json');
+export const PUSH_SUBSCRIPTIONS_FILE = join(DATA_DIR, 'push-subscriptions.json');
 
 /**
  * list-dir 浏览白名单根(逗号分隔)。

@@ -7,12 +7,14 @@ import { StatusBar } from './components/StatusBar';
 import { SettingsPage } from './components/SettingsPage';
 import { NewSessionPanel } from './components/NewSessionPanel';
 import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrowserSpeechRecognition';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 const IMMERSIVE_LONG_PRESS_MS = 160;
 
 type View = 'terminal' | 'settings' | 'newSession';
 
 export default function App() {
+  usePushNotifications();
   const writerRef = useRef<TerminalWriter | null>(null);
   const handleData = useCallback((data: string) => writerRef.current?.write(data), []);
   const handleReset = useCallback(() => writerRef.current?.clear(), []);

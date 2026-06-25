@@ -7,6 +7,8 @@ import { transcribeSpeech } from '../speech/speechService.js';
 import type { SpeechTranscribeRequest } from '../speech/types.js';
 import type { SessionManager } from '../session/SessionManager.js';
 import { createLogger } from '../logger.js';
+import { getWebPushPublicKey, subscribePush, unsubscribePush } from '../push/pushService.js';
+import type webPush from 'web-push';
 
 const logger = createLogger('http');
 
@@ -63,6 +65,20 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
       if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
       logger.info('speech transcription requested', { remoteAddress: req.socket.remoteAddress });
       return respond(req, res, startedAt, 200, await transcribeSpeech(await readBody<SpeechTranscribeRequest>(req, 6 * 1024 * 1024)));
+    }
+
+    if (pathname === '/api/push/public-key') {
+      if (method !== 'GET') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      return respond(req, res, startedAt, 200, { publicKey: getWebPushPublicKey() });
+    }
+
+    if (pathname === '/api/push/subscribe') {
+      if (method !== 'POST' && method !== 'DELETE') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      const subscription = await readBody<webPush.PushSubscription>(req, 64 * 1024);
+      const count = method === 'POST'
+        ? await subscribePush(subscription)
+        : await unsubscribePush(subscription.endpoint);
+      return respond(req, res, startedAt, 200, { ok: true, count });
     }
 
     if (pathname === '/api/notification' || pathname === '/api/hooks/notification') {
