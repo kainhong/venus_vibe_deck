@@ -13,6 +13,7 @@
     "dev:server": "npm run dev -w @venus/server",
     "watch:client": "npm run build:watch -w @venus/client",
     "build": "npm run build -w @venus/server && npm run build -w @venus/client",
+    "test:speech": "npm --workspace @venus/server run test:speech --",
     "start": "npm run start -w @venus/server"
   },
   "devDependencies": {

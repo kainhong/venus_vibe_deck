@@ -4,7 +4,9 @@
       "id": "claude-default",
       "name": "Claude",
       "command": "claude",
-      "args": [],
+      "args": [
+        "--dangerously-skip-permissions"
+      ],
       "resumeArg": "-c",
       "isDefault": true
     },
@@ -12,8 +14,10 @@
       "id": "codex-default",
       "name": "Codex",
       "command": "codex",
-      "args": [],
-      "resumeArg": "",
+      "args": [
+        "--dangerously-bypass-approvals-and-sandbox"
+      ],
+      "resumeArg": "resume",
       "isDefault": false
     },
     {
@@ -21,7 +25,7 @@
       "name": "OpenCode",
       "command": "opencode",
       "args": [],
-      "resumeArg": "",
+      "resumeArg": "-c",
       "isDefault": false
     }
   ],
@@ -32,42 +36,102 @@
         "label": "回车",
         "input": "enter",
         "keyboard": "\r",
-        "aliases": ["回车", "提交", "发送", "确认", "执行", "enter"]
+        "aliases": [
+          "回车",
+          "提交",
+          "发送",
+          "enter"
+        ]
       },
       {
         "id": "escape",
         "label": "Esc",
         "input": "esc",
         "keyboard": "\u001b",
-        "aliases": ["取消", "退出", "返回", "esc", "escape"]
+        "aliases": [
+          "取消",
+          "退出",
+          "返回",
+          "撤销",
+          "擦掉",
+          "不要了",
+          "esc",
+          "escape"
+        ]
       },
       {
         "id": "interrupt",
         "label": "中断",
         "input": "ctrl+c",
         "keyboard": "\u0003",
-        "aliases": ["中断", "停止", "停止执行", "打断", "ctrl c", "control c"]
+        "aliases": [
+          "中断",
+          "停止",
+          "停止执行",
+          "打断",
+          "打断他",
+          "ctrl c",
+          "control c"
+        ]
       },
       {
         "id": "up",
         "label": "上",
         "input": "arrowUp",
         "keyboard": "\u001b[A",
-        "aliases": ["上", "向上", "上一个", "上一条", "上一项"]
+        "aliases": [
+          "上",
+          "向上",
+          "上一个",
+          "上一条",
+          "上一项",
+          "向上选择",
+          "选第一个"
+        ]
       },
       {
         "id": "down",
         "label": "下",
         "input": "arrowDown",
         "keyboard": "\u001b[B",
-        "aliases": ["下", "向下", "下一个", "下一条", "下一项"]
+        "aliases": [
+          "下",
+          "向下",
+          "下一个",
+          "下一条",
+          "下一项",
+          "往下一个"
+        ]
       },
       {
         "id": "space",
         "label": "空格",
         "input": "space",
         "keyboard": " ",
-        "aliases": ["空格", "选择", "确定", "space"]
+        "aliases": [
+          "空格",
+          "选择",
+          "确定",
+          "确认",
+          "执行",
+          "space"
+        ]
+      },
+      {
+        "id": "backspace",
+        "label": "退格",
+        "input": "backspace",
+        "keyboard": "",
+        "aliases": [
+          "退格",
+          "删除",
+          "删掉",
+          "删一个",
+          "删除一下",
+          "帮我删除",
+          "往回删",
+          "backspace"
+        ]
       }
     ]
   }

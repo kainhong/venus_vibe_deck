@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "test:speech": "tsx src/speech/evaluateSpeechDataset.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {

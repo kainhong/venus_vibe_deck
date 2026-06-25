@@ -32,7 +32,7 @@ export type SpeechResult =
     };
 ```
 
-浏览器原生与后端 provider 都使用同一份 `voiceSettings.commands` 做语音命令匹配;命中别名时产生 `type: 'command'`,否则产生 `type: 'text'`。
+浏览器原生与后端 provider 都使用同一份 `voiceSettings.commands`。浏览器原生模式只做整句别名精确匹配；后端 provider 会把完整命令表交给 LLM 判断，只有明确控制动作才产生 `type: 'command'`。
 
 ## Send Behavior
 
@@ -122,23 +122,45 @@ VOICE_LLM_MODEL=gpt-4.1-mini
 1. Validate request size and audio metadata.
 2. Send PCM chunks to ASR provider with `input_audio_buffer.append`, then `input_audio_buffer.commit`.
 3. Extract the final transcript from provider events.
-4. Run deterministic command parsing first. Voice commands are loaded from `server/config/settings.json`; each command defines a human-readable `input`, an exact `keyboard` sequence, and `aliases`. If aliases match a supported command, return directly without LLM.
-5. Otherwise call the configured text LLM to clean the transcript:
+4. Call the configured text LLM to clean and classify the transcript. Voice commands are injected into the prompt from `server/config/settings.json`; each command defines a human-readable `input`, an exact `keyboard` sequence, and `aliases`.
+5. The LLM returns a command only when the transcript clearly maps to one terminal control action:
    - remove filler words, repeated fragments, and obvious noise;
    - preserve user intent and technical terms;
-   - produce either `type: 'text'` or a supported `type: 'command'`.
-6. Apply `submitMode`: text results append `\r` only when submit mode is requested.
+   - produce either `type: 'text'` or a supported `type: 'command'`;
+   - treat short send phrases such as `好的，提交吧`, `那就发送吧`, and `确认发送` as `submit` when no work object is present;
+   - treat task requests such as `帮我提交一下代码`, `帮我获取一下最新代码`, and `帮我看一下项目文件` as text, not commands.
+6. If the LLM is disabled, unavailable, or fails, fall back to exact alias matching only. Partial sentences are not treated as commands.
+7. Apply `submitMode`: text results append `\r` only when submit mode is requested.
 
 Supported command examples:
 
 | Voice Text | Result |
 |---|---|
-| `回车`, `确定`, `提交` | `{ type: 'command', command: 'submit' }` |
-| `取消`, `退出`, `esc` | `{ type: 'command', command: 'escape' }` |
-| `中断`, `停止执行` | `{ type: 'command', command: 'interrupt' }` |
-| `上一个`, `向上` | `{ type: 'command', command: 'up' }` |
-| `下一个`, `向下` | `{ type: 'command', command: 'down' }` |
-| `空格` | `{ type: 'command', command: 'space' }` |
+| `回车`, `提交`, `发送` | `{ type: 'command', command: 'submit' }` |
+| `好的，提交吧`, `确认发送` | `{ type: 'command', command: 'submit' }` |
+| `提交代码`, `提交改动`, `git commit` | `{ type: 'text', message: '...' }` |
+| `取消`, `退出`, `撤销`, `删除一下`, `esc` | `{ type: 'command', command: 'escape' }` |
+| `中断`, `停止执行`, `打断他` | `{ type: 'command', command: 'interrupt' }` |
+| `上一个`, `向上`, `向上选择`, `选第一个` | `{ type: 'command', command: 'up' }` |
+| `下一个`, `向下`, `往下一个` | `{ type: 'command', command: 'down' }` |
+| `空格`, `确定`, `确认`, `执行` | `{ type: 'command', command: 'space' }` |
+
+### Speech Dataset Eval
+
+`docs/data/speech.jsonl` stores speech classification samples. Each line contains `text` and the expected command `id`; use `none` for normal task text.
+
+Run the eval from the repository root:
+
+```bash
+npm run test:speech
+```
+
+The eval calls the configured LLM refine provider and requires `VOICE_LLM_API_KEY` in `.env`. To run a quick subset:
+
+```bash
+npm run test:speech -- --limit=10
+npm run test:speech -- --grep='撤销|确认|发送代码'
+```
 
 Users can tune keyboard directives and aliases for accents and habits:
 
@@ -151,7 +173,7 @@ Users can tune keyboard directives and aliases for accents and habits:
         "label": "回车",
         "input": "enter",
         "keyboard": "\r",
-        "aliases": ["回车", "确定", "走你"]
+        "aliases": ["回车", "发送", "走你"]
       },
       {
         "id": "interrupt",
@@ -166,6 +188,28 @@ Users can tune keyboard directives and aliases for accents and habits:
 ```
 
 `VOICE_USE_SERVER` is intentionally kept in `.env`; `settings.json` stores user-facing voice command preferences. `keyboard` is the exact sequence sent to the PTY, so JSON escapes like `"\r"`, `"\u001b"`, and `"\u0003"` are valid.
+
+The LLM cleanup prompt is also user-configurable:
+
+```json
+{
+  "voiceSettings": {
+    "refinePrompt": {
+      "enabled": true,
+      "system": [
+        "You convert short Chinese voice transcripts into a JSON SpeechResult for a terminal control panel.",
+        "Return only JSON.",
+        "Remove filler words, repeated fragments, and obvious noise."
+      ],
+      "userTemplate": "Transcript:\n{{transcript}}"
+    }
+  }
+}
+```
+
+`{{transcript}}` is replaced with ASR output. Configured command ids, labels, inputs, keyboard sequences, and aliases are injected automatically by the server as structured JSON.
+
+If `server/config/voice-refine-prompt.md` exists, it is used as the primary text-cleaning rules prompt. The server still appends a mandatory JSON output contract and configured command context, so the markdown file should focus on cleanup behavior rather than final response format.
 
 ### 3. `local-wasm` - Technical Exploration
 

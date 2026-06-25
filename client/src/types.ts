@@ -60,6 +60,7 @@ export interface ConfigDoc {
   voiceSettings?: {
     useServerVoice: boolean;
     commands: VoiceCommandConfig[];
+    refinePrompt: VoiceRefinePromptConfig;
   };
 }
 
@@ -69,6 +70,12 @@ export interface VoiceCommandConfig {
   input: string;
   keyboard: string;
   aliases: string[];
+}
+
+export interface VoiceRefinePromptConfig {
+  enabled: boolean;
+  system: string[];
+  userTemplate: string;
 }
 
 export type SpeechResult =

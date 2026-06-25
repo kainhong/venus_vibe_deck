@@ -1,14 +1,19 @@
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SERVER_ROOT = resolve(__dirname, '../..');
 
 /**
  * 持久化路径集中定义 —— 单一改动点。
- * 配置放在运行目录下 config/ 文件夹,方便用户就近维护。
+ * 配置放在 server/config/ 文件夹,方便用户就近维护。
  * 历史等运行时数据放 ~/.venus-hube/。
  */
 export const DATA_DIR = process.env.VENUS_DATA_DIR ?? join(homedir(), '.venus-hube');
-export const CONFIG_DIR = join(process.cwd(), 'config');
+export const CONFIG_DIR = join(SERVER_ROOT, 'config');
 export const CONFIG_FILE = join(CONFIG_DIR, 'settings.json');
+export const VOICE_REFINE_PROMPT_FILE = join(CONFIG_DIR, 'voice-refine-prompt.md');
 export const HISTORY_FILE = join(DATA_DIR, 'history.json');
 export const PUSH_SUBSCRIPTIONS_FILE = join(DATA_DIR, 'push-subscriptions.json');
 
