@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SessionInfo } from '../types';
+import linkIcon from '../asserts/icons/link.svg';
+import linkBrokenIcon from '../asserts/icons/unlink.svg';
 
 interface StatusBarProps {
   connected: boolean;
@@ -35,8 +37,7 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
 
   return (
     <header className="status-bar">
-      <span className={`status-dot ${connected ? 'on' : 'off'}`} aria-hidden />
-      <span className={`status-text${bellActive ? ' bell' : ''}`}>{bellActive ? '已完成' : connected ? '已连接' : '断开'}</span>
+      <img className={`status-link ${currentSessionId ? 'on' : 'off'}${bellActive ? ' bell' : ''}`} src={currentSessionId ? linkIcon : linkBrokenIcon} alt="" aria-hidden />
 
       <select
         className="session-select"

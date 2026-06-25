@@ -116,7 +116,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
             type="button"
             onPointerDown={(e) => { e.preventDefault(); onEnterImmersive(); setShowMore(false); }}
           >
-            <span className="more-panel-icon immersive"><span aria-hidden>⛶</span></span>
+            <span className="more-panel-icon immersive"><img src={voiceIcon} alt="" aria-hidden /></span>
             <span className="more-panel-label">沉浸 Vibe</span>
           </button>
         </div>

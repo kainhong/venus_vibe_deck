@@ -66,19 +66,23 @@ textarea {
   border-bottom: 1px solid var(--line);
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  display: inline-block;
+.status-link {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
 }
 
-.status-dot.on {
-  background: var(--ok);
+.status-link.off {
+  opacity: 0.45;
 }
 
-.status-dot.off {
-  background: var(--danger);
+.status-link.bell {
+  animation: status-bell-pulse 1s ease-in-out 3;
+}
+
+@keyframes status-bell-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .status-text {
@@ -267,9 +271,13 @@ textarea {
 }
 
 .more-panel-icon.immersive {
-  color: var(--muted);
-  font-size: 23px;
-  font-weight: 650;
+  background: #ede7f6;
+}
+
+.more-panel-icon.immersive img {
+  width: 24px;
+  height: 24px;
+  filter: invert(25%) sepia(60%) saturate(1000%) hue-rotate(250deg) brightness(85%);
 }
 
 .more-panel-icon.keyboard.active {
