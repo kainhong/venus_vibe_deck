@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { refineTranscriptWithLlm } from './llmRefine.js';
 import { transcribeWithRealtimeAsr } from './realtimeAsr.js';
+import { transcribeWithLocalAsr } from './localAsr.js';
 import type { SpeechResult, SpeechTranscribeRequest } from './types.js';
 import { createLogger } from '../logger.js';
 
@@ -33,11 +34,9 @@ export async function transcribeSpeech(req: SpeechTranscribeRequest): Promise<Sp
     language: req.language || 'zh',
     submitMode: req.submitMode ?? 'insert',
   });
-  const transcript = await transcribeWithRealtimeAsr({
-    audio,
-    sampleRate,
-    language: req.language || 'zh',
-  });
+  const transcript = config.voice.asrProvider === 'local'
+    ? await transcribeWithLocalAsr({ audio, sampleRate, language: req.language || 'zh' })
+    : await transcribeWithRealtimeAsr({ audio, sampleRate, language: req.language || 'zh' });
   logger.info('speech asr completed', {
     transcriptLength: transcript.length,
     elapsedMs: Date.now() - startedAt,

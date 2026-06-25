@@ -107,7 +107,7 @@ API key 只保存在后端 `.env` 或部署环境变量中,前端永不接触。
 
 ```env
 VOICE_USE_SERVER=true
-VOICE_ASR_BASE_URL=wss://a1.tstech.top/v1/realtime
+VOICE_ASR_BASE_URL=wss://dashscope.aliyuncs.com/compatible-mode/v1/realtime
 VOICE_ASR_API_KEY=sk-xxx
 VOICE_ASR_MODEL=qwen3-asr-flash-realtime
 VOICE_ASR_SAMPLE_RATE=16000

@@ -20,6 +20,8 @@ export const config = {
   rows: Number(process.env.PTY_ROWS ?? 24),
   voice: {
     useServerVoice: parseBoolean(process.env.VOICE_USE_SERVER, false),
+    asrProvider: (process.env.VOICE_ASR_PROVIDER ?? 'cloud') as 'cloud' | 'local',
+    localAsrUrl: process.env.VOICE_LOCAL_ASR_URL ?? 'http://127.0.0.1:7000',
     asrBaseUrl: process.env.VOICE_ASR_BASE_URL ?? 'wss://a1.tstech.top/v1/realtime',
     asrApiKey: process.env.VOICE_ASR_API_KEY ?? '',
     asrModel: process.env.VOICE_ASR_MODEL ?? 'qwen3-asr-flash-realtime',
@@ -31,6 +33,10 @@ export const config = {
     llmApiKey: process.env.VOICE_LLM_API_KEY ?? '',
     llmModel: process.env.VOICE_LLM_MODEL ?? 'gpt-4.1-mini',
     llmTimeoutMs: Number(process.env.VOICE_LLM_TIMEOUT_MS ?? 30000),
+    ttsEnabled: parseBoolean(process.env.VOICE_TTS_ENABLED, false),
+    ttsVoice: process.env.VOICE_TTS_VOICE ?? 'zh-CN-XiaoxiaoNeural',
+    ttsRate: process.env.VOICE_TTS_RATE ?? '+0%',
+    ttsVolume: process.env.VOICE_TTS_VOLUME ?? '+0%',
   },
   webPush: {
     publicKey: process.env.WEB_PUSH_PUBLIC_KEY ?? '',

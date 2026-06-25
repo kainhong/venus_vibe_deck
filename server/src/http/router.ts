@@ -4,6 +4,7 @@ import { addWorkspace, loadHistory } from '../storage/workspaceHistoryStore.js';
 import { listDir } from './listDir.js';
 import { PathForbiddenError } from '../util/pathGuard.js';
 import { transcribeSpeech } from '../speech/speechService.js';
+import { synthesize } from '../speech/tts.js';
 import type { SpeechTranscribeRequest } from '../speech/types.js';
 import type { SessionManager } from '../session/SessionManager.js';
 import { createLogger } from '../logger.js';
@@ -96,6 +97,22 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
       logger.info('notification received', { ...event, remoteAddress: req.socket.remoteAddress });
       manager.notify(event);
       return respond(req, res, startedAt, 200, { ok: true });
+    }
+
+    if (pathname === '/api/tts') {
+      if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      const { text } = await readBody<{ text: string }>(req, 64 * 1024);
+      if (!text || !text.trim()) return respond(req, res, startedAt, 400, { error: 'text required' });
+      const audio = await synthesize(text);
+      if (!audio) return respond(req, res, startedAt, 503, { error: 'tts unavailable or disabled' });
+      logger.info('tts response sent', { textLength: text.length, audioBytes: audio.length, durationMs: Date.now() - startedAt });
+      res.writeHead(200, {
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': audio.length.toString(),
+        'Cache-Control': 'no-store',
+      });
+      res.end(audio);
+      return true;
     }
 
     return respond(req, res, startedAt, 404, { error: 'not found' });
