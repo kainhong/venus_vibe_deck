@@ -18,7 +18,7 @@ const TOP_CONTROLS = [
     data: '\x1b[A',
     label: '上移',
     longPressOptions: [
-      { glyph: '←', data: '\x1b[D', label: '左移' },
+      { icon: arrowIcon, iconClass: 'rotate-left', data: '\x1b[D', label: '左移' },
       { glyph: 'Home', data: '\x1b[H', label: 'Home' },
     ],
   },
@@ -29,7 +29,7 @@ const TOP_CONTROLS = [
     data: '\x1b[B',
     label: '下移',
     longPressOptions: [
-      { glyph: '→', data: '\x1b[C', label: '右移' },
+      { icon: arrowIcon, iconClass: 'rotate-right', data: '\x1b[C', label: '右移' },
       { glyph: 'End', data: '\x1b[F', label: 'End' },
     ],
   },
@@ -175,7 +175,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
                     }}
                     aria-label={option.label}
                   >
-                    {option.glyph}
+                    {'glyph' in option ? option.glyph : <img className={option.iconClass} src={option.icon} alt="" aria-hidden />}
                   </button>
                 ))}
               </span>

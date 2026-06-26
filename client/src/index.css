@@ -460,6 +460,12 @@ textarea {
   transform: scale(0.96);
 }
 
+.key-popover-option img {
+  width: 20px;
+  height: 20px;
+  opacity: 0.82;
+}
+
 @keyframes key-popover-in {
   from { opacity: 0; transform: translateX(-50%) translateY(5px) scale(0.96); }
   to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
@@ -592,6 +598,14 @@ textarea {
 
 .rotate-down {
   transform: rotate(-90deg);
+}
+
+.rotate-left {
+  transform: rotate(0deg);
+}
+
+.rotate-right {
+  transform: rotate(180deg);
 }
 
 .modal-overlay {
