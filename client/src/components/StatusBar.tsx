@@ -32,7 +32,7 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
 
   const showAbout = () => {
     setMenuOpen(false);
-    alert('Venus Agent HUD');
+    alert('Venus Vibe Deck');
   };
 
   return (

@@ -87,7 +87,7 @@ export class SessionManager {
     logger.info('notification broadcast', payload);
     this.emit(payload);
     void sendPushNotification({
-      title: 'Venus',
+      title: 'Vibe Deck',
       body: event.message,
       source: event.source,
       sessionId: event.sessionId,

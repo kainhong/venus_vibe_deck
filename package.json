@@ -1,9 +1,9 @@
 {
-  "name": "venus-agent-hube",
+  "name": "venus-vibe-deck",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "移动端 AI 编程 HUD — 把手机变成服务器端 AI Agent 的物理控制面板",
+  "description": "Venus Vibe Deck — 移动端 AI 编程控制台",
   "workspaces": [
     "server",
     "client"

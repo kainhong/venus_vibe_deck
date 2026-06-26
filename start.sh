@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Venus Terminal 服务启停脚本
+# Venus Vibe Deck 服务启停脚本
 # 用法:
 #   ./start.sh        启动服务(后台运行)
 #   ./start.sh stop   停止服务
@@ -20,7 +20,7 @@ start() {
   echo "正在构建..."
   cd "$DIR" && npm run build > /dev/null 2>&1
 
-  echo "正在启动 Venus Terminal..."
+  echo "正在启动 Venus Vibe Deck..."
   cd "$DIR" && nohup node server/dist/index.js > "$LOG_FILE" 2>&1 &
   echo $! > "$PID_FILE"
   sleep 1

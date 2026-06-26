@@ -1,4 +1,4 @@
-# Vibe Coding: 移动端 AI 编程 HUD 系统设计文档
+# Vibe Coding: 移动端 AI 编程控制台 系统设计文档
 
 ## 1. 产品概述 (Product Vision)
 

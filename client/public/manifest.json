@@ -1,7 +1,7 @@
 {
-  "name": "Venus Terminal",
-  "short_name": "Venus",
-  "description": "移动端 AI Agent 控制终端",
+  "name": "Venus Vibe Deck",
+  "short_name": "Vibe Deck",
+  "description": "移动端 AI Agent 编程控制台",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

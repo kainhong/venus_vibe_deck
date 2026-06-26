@@ -60,7 +60,7 @@ Optional first version. Remove by endpoint when provided.
 Persist subscriptions in local server data:
 
 ```text
-~/.venus-hube/push-subscriptions.json
+~/.venus-vibe-deck/push-subscriptions.json
 ```
 
 Invalid subscriptions should be removed when push send returns 404 or 410.
@@ -76,7 +76,7 @@ Payload:
 
 ```json
 {
-  "title": "Venus",
+  "title": "Vibe Deck",
   "body": "任务完成",
   "source": "claude",
   "sessionId": "optional",

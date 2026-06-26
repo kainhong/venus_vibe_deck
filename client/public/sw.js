@@ -1,4 +1,4 @@
-const CACHE_NAME = 'venus-terminal-v2';
+const CACHE_NAME = 'venus-vibe-deck-v1';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -32,12 +32,12 @@ self.addEventListener('push', (event) => {
     payload = {};
   }
 
-  const title = payload.title || 'Venus';
+  const title = payload.title || 'Vibe Deck';
   const body = payload.body || `${payload.source || 'Agent'} 已完成`;
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      tag: payload.sessionId || 'venus-agent',
+      tag: payload.sessionId || 'venus-vibe-deck',
       renotify: true,
       icon: '/icon-192.png',
       badge: '/icon-192.png',

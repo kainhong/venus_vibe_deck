@@ -1,6 +1,6 @@
 # 语音识别（STT）配置
 
-Venus Terminal 支持两种 ASR 提供者，通过环境变量一键切换。
+Venus Vibe Deck 支持两种 ASR 提供者，通过环境变量一键切换。
 
 ## 提供者切换
 

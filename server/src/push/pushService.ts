@@ -56,7 +56,7 @@ export async function sendPushNotification(payload: PushNotificationPayload): Pr
   }
 
   const body = JSON.stringify({
-    title: payload.title ?? 'Venus',
+    title: payload.title ?? 'Vibe Deck',
     body: payload.body ?? `${payload.source ?? 'Agent'} 已完成`,
     source: payload.source,
     sessionId: payload.sessionId,

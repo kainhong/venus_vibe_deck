@@ -1,6 +1,6 @@
 # STT Server — 本地语音识别服务
 
-基于 [SenseVoiceSmall](https://huggingface.co/FunAudioLLM/SenseVoiceSmall) 的本地离线语音识别服务，通过 HTTP 接口为 Venus Terminal 提供 ASR 能力。
+基于 [SenseVoiceSmall](https://huggingface.co/FunAudioLLM/SenseVoiceSmall) 的本地离线语音识别服务，通过 HTTP 接口为 Venus Vibe Deck 提供 ASR 能力。
 
 ## 特性
 
@@ -102,7 +102,7 @@ curl -X POST http://127.0.0.1:7000/transcribe \
   -d "{\"audio\":\"$(base64 /tmp/test.pcm)\",\"sample_rate\":16000,\"language\":\"zh\"}"
 ```
 
-## 与 Venus Terminal 集成
+## 与 Venus Vibe Deck 集成
 
 在项目根目录 `.env` 中切换 ASR 提供者：
 

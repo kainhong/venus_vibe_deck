@@ -8,9 +8,9 @@ const SERVER_ROOT = resolve(__dirname, '../..');
 /**
  * 持久化路径集中定义 —— 单一改动点。
  * 配置放在 server/config/ 文件夹,方便用户就近维护。
- * 历史等运行时数据放 ~/.venus-hube/。
+ * 历史等运行时数据放 ~/.venus-vibe-deck/。
  */
-export const DATA_DIR = process.env.VENUS_DATA_DIR ?? join(homedir(), '.venus-hube');
+export const DATA_DIR = process.env.VENUS_DATA_DIR ?? join(homedir(), '.venus-vibe-deck');
 export const CONFIG_DIR = join(SERVER_ROOT, 'config');
 export const CONFIG_FILE = join(CONFIG_DIR, 'settings.json');
 export const VOICE_REFINE_PROMPT_FILE = join(CONFIG_DIR, 'voice-refine-prompt.md');

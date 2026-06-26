@@ -1,6 +1,6 @@
 # TTS 语音合成配置
 
-Venus Terminal 集成了 Edge TTS 语音合成服务，基于微软在线 TTS，免费、无需 API Key。
+Venus Vibe Deck 集成了 Edge TTS 语音合成服务，基于微软在线 TTS，免费、无需 API Key。
 
 ## 环境变量
 
