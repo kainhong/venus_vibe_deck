@@ -18,7 +18,7 @@ const TOP_CONTROLS = [
     data: '\x1b[A',
     label: '上移',
     longPressOptions: [
-      { glyph: 'Left', data: '\x1b[D', label: '左移' },
+      { glyph: '←', data: '\x1b[D', label: '左移' },
       { glyph: 'Home', data: '\x1b[H', label: 'Home' },
     ],
   },
@@ -29,7 +29,7 @@ const TOP_CONTROLS = [
     data: '\x1b[B',
     label: '下移',
     longPressOptions: [
-      { glyph: 'Right', data: '\x1b[C', label: '右移' },
+      { glyph: '→', data: '\x1b[C', label: '右移' },
       { glyph: 'End', data: '\x1b[F', label: 'End' },
     ],
   },
@@ -231,7 +231,10 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
                   {'longPressOptions' in k && <span className="tool-btn-more-mark" aria-hidden />}
                 </>
               ) : (
-                <img className={'iconClass' in k ? k.iconClass : ''} src={k.icon} alt="" aria-hidden />
+                <>
+                  <img className={'iconClass' in k ? k.iconClass : ''} src={k.icon} alt="" aria-hidden />
+                  {'longPressOptions' in k && <span className="tool-btn-more-mark" aria-hidden />}
+                </>
               )}
             </button>
           </span>
