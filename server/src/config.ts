@@ -22,7 +22,7 @@ export const config = {
     useServerVoice: parseBoolean(process.env.VOICE_USE_SERVER, false),
     asrProvider: (process.env.VOICE_ASR_PROVIDER ?? 'cloud') as 'cloud' | 'local',
     localAsrUrl: process.env.VOICE_LOCAL_ASR_URL ?? 'http://127.0.0.1:7000',
-    asrBaseUrl: process.env.VOICE_ASR_BASE_URL ?? 'wss://a1.tstech.top/v1/realtime',
+    asrBaseUrl: process.env.VOICE_ASR_BASE_URL ?? 'wss://api.openai.top/v1/realtime',
     asrApiKey: process.env.VOICE_ASR_API_KEY ?? '',
     asrModel: process.env.VOICE_ASR_MODEL ?? 'qwen3-asr-flash-realtime',
     asrSampleRate: Number(process.env.VOICE_ASR_SAMPLE_RATE ?? 16000),
