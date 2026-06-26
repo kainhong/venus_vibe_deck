@@ -10,6 +10,8 @@ export interface SessionInfo {
   alive: boolean;
 }
 
+export type HandMode = 'left' | 'right';
+
 export type ClientMessage =
   | { action: 'input'; sessionId: string; data: string }
   | { action: 'resize'; sessionId: string; cols: number; rows: number }

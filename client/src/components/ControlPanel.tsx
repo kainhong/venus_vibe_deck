@@ -6,6 +6,7 @@ import pasteIcon from '../asserts/icons/paste.svg';
 import keyboardIcon from '../asserts/icons/keyboard.svg';
 import backspaceIcon from '../asserts/icons/backspace.svg';
 import type { UseBrowserSpeechRecognitionReturn } from '../hooks/useBrowserSpeechRecognition';
+import type { HandMode } from '../types';
 
 const LONG_PRESS_MS = 220;
 const KEY_LONG_PRESS_MS = 320;
@@ -61,12 +62,21 @@ interface ControlPanelProps {
   onKey: (data: string) => void;
   speech: UseBrowserSpeechRecognitionReturn;
   keyboardEnabled: boolean;
+  handMode: HandMode;
   onToggleKeyboard: () => void;
   onPaste: () => void;
   onEnterImmersive: () => void;
 }
 
-export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard, onPaste, onEnterImmersive }: ControlPanelProps) {
+export function ControlPanel({
+  onKey,
+  speech,
+  keyboardEnabled,
+  handMode,
+  onToggleKeyboard,
+  onPaste,
+  onEnterImmersive,
+}: ControlPanelProps) {
   const [showMore, setShowMore] = useState(false);
   const [activeKeyMenu, setActiveKeyMenu] = useState<string | null>(null);
   const voicePressTimerRef = useRef<number | undefined>(undefined);
@@ -240,7 +250,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
           </span>
         ))}
       </div>
-      <div className="action-row" aria-label="会话操作">
+      <div className={`action-row ${handMode === 'left' ? 'left-hand' : ''}`} aria-label="会话操作">
         {ACTION_CONTROLS.map((k) => (
           <span className={`action-key-wrap ${k.id}`} key={k.id}>
             {activeKeyMenu === k.id && 'longPressOptions' in k && (

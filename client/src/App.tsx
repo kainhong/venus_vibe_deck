@@ -12,10 +12,12 @@ import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrows
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { api as httpApi } from './api/http';
 import voiceIcon from './asserts/icons/voice.svg';
+import type { HandMode } from './types';
 
 const IMMERSIVE_LONG_PRESS_MS = 400;
 const SESSION_HISTORY_STORAGE_KEY = 'venus-vibe-deck.session-history.v1';
 const SESSION_HISTORY_LIMIT = 10;
+const DISPLAY_HAND_STORAGE_KEY = 'venus-vibe-deck.display-hand.v1';
 
 type View = 'terminal' | 'settings' | 'newSession' | 'history' | 'about';
 type SessionAlert = { at: number; source?: string; message?: string };
@@ -36,6 +38,7 @@ export default function App() {
   const [sessionAlerts, setSessionAlerts] = useState<Record<string, SessionAlert>>({});
   const pendingHistoryRef = useRef<SessionHistoryEntry | null>(null);
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
+  const [handMode, setHandModeState] = useState<HandMode>(() => readHandMode());
   const [immersive, setImmersive] = useState(false);
   const [immersivePending, setImmersivePending] = useState(false);
   const immersivePendingRef = useRef(false);
@@ -153,6 +156,10 @@ export default function App() {
 
   const handleToggleKeyboard = useCallback(() => {
     setKeyboardEnabled((v) => !v);
+  }, []);
+
+  const handleHandModeChange = useCallback((mode: HandMode) => {
+    setHandModeState(persistHandMode(mode));
   }, []);
 
   const enterImmersive = useCallback(() => {
@@ -412,6 +419,7 @@ export default function App() {
         onKey={api.sendInput}
         speech={speech}
         keyboardEnabled={keyboardEnabled}
+        handMode={handMode}
         onToggleKeyboard={handleToggleKeyboard}
         onPaste={handlePaste}
         onEnterImmersive={enterImmersive}
@@ -423,7 +431,13 @@ export default function App() {
         </button>
       )}
 
-      {view === 'settings' && <SettingsPage onClose={() => setView('terminal')} />}
+      {view === 'settings' && (
+        <SettingsPage
+          handMode={handMode}
+          onHandModeChange={handleHandModeChange}
+          onClose={() => setView('terminal')}
+        />
+      )}
       {view === 'about' && <AboutPanel onClose={() => setView('terminal')} />}
       {view === 'history' && (
         <SessionHistoryPanel
@@ -504,4 +518,21 @@ function persistSessionHistory(entries: SessionHistoryEntry[]): SessionHistoryEn
     // 历史持久化失败不影响会话连接。
   }
   return limited;
+}
+
+function readHandMode(): HandMode {
+  try {
+    return localStorage.getItem(DISPLAY_HAND_STORAGE_KEY) === 'left' ? 'left' : 'right';
+  } catch {
+    return 'right';
+  }
+}
+
+function persistHandMode(mode: HandMode): HandMode {
+  try {
+    localStorage.setItem(DISPLAY_HAND_STORAGE_KEY, mode);
+  } catch {
+    // 显示偏好持久化失败时只影响下次进入的默认值。
+  }
+  return mode;
 }

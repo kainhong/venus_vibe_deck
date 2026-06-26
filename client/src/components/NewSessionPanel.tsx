@@ -27,6 +27,11 @@ export function NewSessionPanel({
   const selected = configs.find((c) => c.id === selectedId);
   const canCreate = !!selected && !!cwd.trim();
 
+  const handlePickHistoryWorkspace = (path: string) => {
+    setCwd(path);
+    if (selected?.resumeArg) setResume(true);
+  };
+
   const handleCreate = () => {
     if (!selected || !cwd.trim()) return;
     onCreate({
@@ -76,7 +81,7 @@ export function NewSessionPanel({
 
           <div className="field">
             <span>Workspace <em className="required">必选</em></span>
-            <WorkspacePicker value={cwd} onChange={setCwd} />
+            <WorkspacePicker value={cwd} onChange={setCwd} onPickHistory={handlePickHistoryWorkspace} />
           </div>
 
           <label className="checkbox field">

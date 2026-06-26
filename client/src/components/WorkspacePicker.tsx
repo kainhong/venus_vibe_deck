@@ -13,7 +13,15 @@ const VISIBLE_WORKSPACE_HISTORY = 5;
  * - 常用历史:点击即填
  * - 浏览:调 listDir(受后端白名单约束)逐级进入目录后选定
  */
-export function WorkspacePicker({ value, onChange }: { value: string; onChange: (p: string) => void }) {
+export function WorkspacePicker({
+  value,
+  onChange,
+  onPickHistory,
+}: {
+  value: string;
+  onChange: (p: string) => void;
+  onPickHistory?: (p: string) => void;
+}) {
   const { history, listDir } = useApp();
   const [browsing, setBrowsing] = useState(false);
   const [entries, setEntries] = useState<DirEntry[]>([]);
@@ -64,7 +72,16 @@ export function WorkspacePicker({ value, onChange }: { value: string; onChange: 
         <div className="ws-history">
           <span className="ws-label">常用:</span>
           {history.workspaces.slice(0, VISIBLE_WORKSPACE_HISTORY).map((w) => (
-            <button key={w.path} type="button" className="chip" onClick={() => onChange(w.path)} title={w.path}>
+            <button
+              key={w.path}
+              type="button"
+              className="chip"
+              onClick={() => {
+                onChange(w.path);
+                onPickHistory?.(w.path);
+              }}
+              title={w.path}
+            >
               {formatWorkspaceLabel(w.path)}
             </button>
           ))}

@@ -475,6 +475,10 @@ textarea {
   align-items: center;
 }
 
+.action-row.left-hand {
+  flex-direction: row-reverse;
+}
+
 .action-key-wrap {
   position: relative;
   display: flex;
@@ -956,7 +960,7 @@ textarea {
 }
 
 .about-qrcode {
-  width: min(280px, 78vw);
+  width: min(180px, 52vw);
   aspect-ratio: 1;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -984,6 +988,48 @@ textarea {
 .settings-section h3 {
   margin: 0;
   font-size: 15px;
+}
+
+.settings-option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.settings-option-label {
+  color: var(--muted);
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+
+.settings-segmented {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(84px, 1fr));
+  gap: 4px;
+  width: min(100%, 220px);
+  margin-left: auto;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.settings-segmented button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-segmented button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(31, 35, 41, 0.08);
 }
 
 .voice-command-summary {

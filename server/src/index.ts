@@ -30,8 +30,23 @@ httpServer.listen(config.port, config.host, () => {
     port: config.port,
     defaultCommand: config.defaultCommand,
     voiceServerEnabled: config.voice.useServerVoice,
+    sttMode: getSttMode(),
+    sttProvider: config.voice.useServerVoice ? config.voice.asrProvider : 'browser',
+    sttEndpoint: getSttEndpoint(),
+    sttModel: config.voice.useServerVoice && config.voice.asrProvider === 'cloud' ? config.voice.asrModel : undefined,
+    sttSampleRate: config.voice.useServerVoice ? config.voice.asrSampleRate : undefined,
   });
 });
+
+function getSttMode(): 'browser' | 'server-local' | 'server-cloud' {
+  if (!config.voice.useServerVoice) return 'browser';
+  return config.voice.asrProvider === 'local' ? 'server-local' : 'server-cloud';
+}
+
+function getSttEndpoint(): string | undefined {
+  if (!config.voice.useServerVoice) return undefined;
+  return config.voice.asrProvider === 'local' ? config.voice.localAsrUrl : config.voice.asrBaseUrl;
+}
 
 // 优雅关闭:收到信号时终止所有 PTY
 function shutdown(signal: string) {
