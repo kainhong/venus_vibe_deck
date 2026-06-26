@@ -112,9 +112,9 @@ VOICE_ASR_API_KEY=sk-xxx
 VOICE_ASR_MODEL=qwen3-asr-flash-realtime
 VOICE_ASR_SAMPLE_RATE=16000
 
-VOICE_LLM_BASE_URL=https://api.openai.com/v1
+VOICE_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 VOICE_LLM_API_KEY=sk-xxx
-VOICE_LLM_MODEL=gpt-4.1-mini
+VOICE_LLM_MODEL=qwen-plus
 ```
 
 #### Server Pipeline
