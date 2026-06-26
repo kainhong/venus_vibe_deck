@@ -105,7 +105,9 @@ export function useBrowserSpeechRecognition({
     if (typeof window === 'undefined') return 'unsupported';
     return window.SpeechRecognition || window.webkitSpeechRecognition ? 'idle' : 'unsupported';
   });
+  const stateRef = useRef(state);
 
+  stateRef.current = state;
   onResultRef.current = onResult;
   onErrorRef.current = onError;
   submitModeRef.current = submitMode;
@@ -337,6 +339,48 @@ export function useBrowserSpeechRecognition({
       return window.SpeechRecognition || window.webkitSpeechRecognition ? 'idle' : 'unsupported';
     });
   }, [useServerVoice]);
+
+  useEffect(() => {
+    const resetAfterPageResume = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (recognitionRef.current || serverRecorderRef.current) return;
+      if (stateRef.current === 'listening' || stateRef.current === 'processing' || stateRef.current === 'error') {
+        suppressResultRef.current = false;
+        setState('idle');
+      }
+    };
+
+    const stopBeforePageBackground = () => {
+      suppressResultRef.current = true;
+      const recognition = recognitionRef.current;
+      if (recognition) {
+        try {
+          recognition.abort();
+        } catch { /* ignore */ }
+      }
+      cleanup();
+      cleanupServerRecorder();
+      if (stateRef.current === 'listening' || stateRef.current === 'processing') {
+        setState('idle');
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') stopBeforePageBackground();
+      else resetAfterPageResume();
+    };
+
+    window.addEventListener('pagehide', stopBeforePageBackground);
+    window.addEventListener('pageshow', resetAfterPageResume);
+    window.addEventListener('focus', resetAfterPageResume);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('pagehide', stopBeforePageBackground);
+      window.removeEventListener('pageshow', resetAfterPageResume);
+      window.removeEventListener('focus', resetAfterPageResume);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [cleanup, cleanupServerRecorder]);
 
   useEffect(() => () => {
     cleanup();

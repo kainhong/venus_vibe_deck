@@ -96,73 +96,164 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
   }, []);
 
   useEffect(() => {
-    const ws = new WebSocket(buildWsUrl());
-    wsRef.current = ws;
+    let disposed = false;
+    let reconnectTimer: number | undefined;
+    let refreshAfterHidden = false;
 
-    ws.onopen = () => {
-      setConnected(true);
-      send({ action: 'system', command: 'hello', targetSessionId: readSessionToken() });
+    const clearReconnectTimer = () => {
+      if (reconnectTimer !== undefined) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = undefined;
+      }
     };
-    ws.onclose = () => setConnected(false);
-    ws.onerror = () => setConnected(false);
-    ws.onmessage = (ev) => {
-      let msg: ServerMessage;
-      try {
-        msg = JSON.parse(ev.data as string) as ServerMessage;
-      } catch {
+
+    const sendHello = (ws: WebSocket) => {
+      ws.send(JSON.stringify({ action: 'system', command: 'hello', targetSessionId: readSessionToken() } satisfies ClientMessage));
+    };
+
+    const scheduleReconnect = () => {
+      if (disposed || document.visibilityState === 'hidden' || reconnectTimer !== undefined) return;
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = undefined;
+        connect();
+      }, 800);
+    };
+
+    const connect = () => {
+      if (disposed) return;
+      const existing = wsRef.current;
+      if (existing && (existing.readyState === WebSocket.OPEN || existing.readyState === WebSocket.CONNECTING)) return;
+
+      const ws = new WebSocket(buildWsUrl());
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        if (wsRef.current !== ws) return;
+        clearReconnectTimer();
+        setConnected(true);
+        sendHello(ws);
+      };
+      ws.onclose = () => {
+        if (wsRef.current === ws) {
+          setConnected(false);
+          scheduleReconnect();
+        }
+      };
+      ws.onerror = () => {
+        if (wsRef.current === ws) setConnected(false);
+      };
+      ws.onmessage = (ev) => {
+        if (wsRef.current !== ws) return;
+        let msg: ServerMessage;
+        try {
+          msg = JSON.parse(ev.data as string) as ServerMessage;
+        } catch {
+          return;
+        }
+        switch (msg.type) {
+          case 'terminal_out':
+            if (msg.sessionId === currentRef.current) onDataRef.current(msg.data);
+            break;
+          case 'terminal_bell':
+            if (!msg.sessionId || msg.sessionId === currentRef.current) {
+              setLastBellAt(msg.at);
+              setLastBellMessage(msg.message);
+              setLastBellSource(msg.source);
+            }
+            break;
+          case 'session_list':
+            sessionsRef.current = msg.sessions;
+            setSessions(msg.sessions);
+            // 首次拿到列表时自动绑定第一个会话;空列表时明确清空当前会话。
+            setCurrentSessionId((prev) => {
+              const next =
+                resolveSessionId(msg.sessions, readSessionToken()) ??
+                (prev && msg.sessions.some((s) => s.id === prev) ? prev : undefined) ??
+                msg.sessions[0]?.id;
+              if (next !== currentRef.current) onResetRef.current?.();
+              writeSessionToken(next);
+              currentRef.current = next;
+              return next;
+            });
+            break;
+          case 'session_created':
+            // 同步更新 ref(不等 render):紧随其后的 attach scrollback 才能按 sid 匹配
+            onResetRef.current?.();
+            currentRef.current = msg.sessionId;
+            setCurrentSessionId(msg.sessionId);
+            writeSessionToken(msg.sessionId);
+            break;
+          case 'session_destroyed':
+            // 当前会话被关:切到第一个仍存活的,并通知后端 attach(无存活则置空)
+            if (currentRef.current === msg.sessionId) {
+              const next = sessionsRef.current.find((s) => s.id !== msg.sessionId && s.alive)?.id;
+              onResetRef.current?.();
+              currentRef.current = next;
+              setCurrentSessionId(next);
+              writeSessionToken(next);
+              if (next) send({ action: 'system', command: 'switch_session', targetSessionId: next });
+            }
+            break;
+          case 'error':
+            console.error('[ws] server error:', msg.message);
+            break;
+        }
+      };
+    };
+
+    const recoverConnection = (forceReconnect = false) => {
+      if (document.visibilityState === 'hidden') return;
+      const ws = wsRef.current;
+      if (!forceReconnect && ws?.readyState === WebSocket.OPEN) {
+        sendHello(ws);
+        setConnected(true);
         return;
       }
-      switch (msg.type) {
-        case 'terminal_out':
-          if (msg.sessionId === currentRef.current) onDataRef.current(msg.data);
-          break;
-        case 'terminal_bell':
-          if (!msg.sessionId || msg.sessionId === currentRef.current) {
-            setLastBellAt(msg.at);
-            setLastBellMessage(msg.message);
-            setLastBellSource(msg.source);
-          }
-          break;
-        case 'session_list':
-          sessionsRef.current = msg.sessions;
-          setSessions(msg.sessions);
-          // 首次拿到列表时自动绑定第一个会话;空列表时明确清空当前会话。
-          setCurrentSessionId((prev) => {
-            const next =
-              resolveSessionId(msg.sessions, readSessionToken()) ??
-              (prev && msg.sessions.some((s) => s.id === prev) ? prev : undefined) ??
-              msg.sessions[0]?.id;
-            if (next !== currentRef.current) onResetRef.current?.();
-            writeSessionToken(next);
-            currentRef.current = next;
-            return next;
-          });
-          break;
-        case 'session_created':
-          // 同步更新 ref(不等 render):紧随其后的 attach scrollback 才能按 sid 匹配
-          onResetRef.current?.();
-          currentRef.current = msg.sessionId;
-          setCurrentSessionId(msg.sessionId);
-          writeSessionToken(msg.sessionId);
-          break;
-        case 'session_destroyed':
-          // 当前会话被关:切到第一个仍存活的,并通知后端 attach(无存活则置空)
-          if (currentRef.current === msg.sessionId) {
-            const next = sessionsRef.current.find((s) => s.id !== msg.sessionId && s.alive)?.id;
-            onResetRef.current?.();
-            currentRef.current = next;
-            setCurrentSessionId(next);
-            writeSessionToken(next);
-            if (next) send({ action: 'system', command: 'switch_session', targetSessionId: next });
-          }
-          break;
-        case 'error':
-          console.error('[ws] server error:', msg.message);
-          break;
+      setConnected(false);
+      if (ws && ws.readyState !== WebSocket.CLOSED) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.close();
       }
+      wsRef.current = null;
+      connect();
     };
 
-    return () => ws.close();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        refreshAfterHidden = true;
+        return;
+      }
+      recoverConnection(refreshAfterHidden);
+      refreshAfterHidden = false;
+    };
+
+    const onPageShow = (event: PageTransitionEvent) => {
+      recoverConnection(event.persisted || refreshAfterHidden);
+      refreshAfterHidden = false;
+    };
+
+    const onFocus = () => recoverConnection();
+    const onOnline = () => recoverConnection();
+
+    connect();
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onOnline);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      disposed = true;
+      clearReconnectTimer();
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onOnline);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      wsRef.current?.close();
+      wsRef.current = null;
+    };
   }, [send]);
 
   const sendInput = useCallback(
