@@ -223,6 +223,9 @@ textarea {
   padding: 6px 12px max(10px, env(safe-area-inset-bottom));
   background: #f7f8fa;
   border-top: 1px solid var(--line);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .more-panel {
@@ -354,7 +357,10 @@ textarea {
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
   transition: transform 0.08s, background 0.08s;
 }
 
@@ -441,6 +447,10 @@ textarea {
   font-weight: 650;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
   box-shadow: inset 0 -2px 0 rgba(31, 35, 41, 0.08);
 }
 
@@ -459,7 +469,24 @@ textarea {
   align-items: center;
 }
 
+.action-key-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.action-key-wrap.escape,
+.action-key-wrap.backspace,
+.action-key-wrap.confirm {
+  flex: 0 0 64px;
+}
+
+.action-key-wrap.voice {
+  flex: 1;
+}
+
 .action-btn {
+  width: 100%;
   height: 46px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -468,6 +495,10 @@ textarea {
   place-items: center;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
   transition: transform 0.08s, background 0.08s;
 }
 

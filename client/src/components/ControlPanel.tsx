@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import enterIcon from '../asserts/icons/enter.svg';
 import arrowIcon from '../asserts/icons/to_left.svg';
 import voiceIcon from '../asserts/icons/voice.svg';
@@ -11,8 +11,28 @@ const LONG_PRESS_MS = 220;
 const KEY_LONG_PRESS_MS = 320;
 
 const TOP_CONTROLS = [
-  { id: 'up', icon: arrowIcon, iconClass: 'rotate-up', data: '\x1b[A', label: '上移' },
-  { id: 'down', icon: arrowIcon, iconClass: 'rotate-down', data: '\x1b[B', label: '下移' },
+  {
+    id: 'up',
+    icon: arrowIcon,
+    iconClass: 'rotate-up',
+    data: '\x1b[A',
+    label: '上移',
+    longPressOptions: [
+      { glyph: 'Left', data: '\x1b[D', label: '左移' },
+      { glyph: 'Home', data: '\x1b[H', label: 'Home' },
+    ],
+  },
+  {
+    id: 'down',
+    icon: arrowIcon,
+    iconClass: 'rotate-down',
+    data: '\x1b[B',
+    label: '下移',
+    longPressOptions: [
+      { glyph: 'Right', data: '\x1b[C', label: '右移' },
+      { glyph: 'End', data: '\x1b[F', label: 'End' },
+    ],
+  },
   { id: 'toggle', glyph: '␣', data: ' ', label: '空格', longPressOptions: [{ glyph: 'Tab', data: '\t', label: 'Tab' }] },
 ] as const;
 
@@ -33,7 +53,7 @@ const TOOL_CONTROLS = [
 const ACTION_CONTROLS = [
   { id: 'escape', glyph: 'esc', data: '\x1b', label: 'Esc' },
   { id: 'voice', icon: voiceIcon, label: '语音输入' },
-  { id: 'backspace', icon: backspaceIcon, data: '\x7f', label: '退格' },
+  { id: 'backspace', icon: backspaceIcon, data: '\x7f', label: '退格', longPressOptions: [{ glyph: '清除', data: '\x15', label: '清除' }] },
   { id: 'confirm', icon: enterIcon, data: '\r', label: '确认' },
 ] as const;
 
@@ -91,8 +111,23 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
     speech.toggle();
   };
 
+  useEffect(() => {
+    if (!activeKeyMenu) return;
+    const closeKeyMenu = (e: PointerEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) {
+        setActiveKeyMenu(null);
+        return;
+      }
+      if (target.closest('.key-popover') || target.closest('.tool-btn.menu-open') || target.closest('.action-btn.menu-open')) return;
+      setActiveKeyMenu(null);
+    };
+    document.addEventListener('pointerdown', closeKeyMenu, true);
+    return () => document.removeEventListener('pointerdown', closeKeyMenu, true);
+  }, [activeKeyMenu]);
+
   return (
-    <div className="control-panel">
+    <div className="control-panel" onContextMenu={(e) => e.preventDefault()}>
       {showMore && (
         <div className="more-panel">
           <button
@@ -133,6 +168,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
                     type="button"
                     onPointerDown={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       onKey(option.data);
                       setActiveKeyMenu(null);
                       keyLongPressRef.current = false;
@@ -203,39 +239,94 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
       </div>
       <div className="action-row" aria-label="会话操作">
         {ACTION_CONTROLS.map((k) => (
-          <button
-            key={k.id}
-            className={`action-btn ${k.id}${k.id === 'escape' ? ' danger' : ''}`}
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              if (k.id === 'voice') startVoicePress();
-              else if ('data' in k) onKey(k.data);
-            }}
-            onPointerUp={(e) => {
-              if (k.id !== 'voice') return;
-              e.preventDefault();
-              endVoicePress();
-            }}
-            onPointerCancel={() => {
-              if (k.id !== 'voice') return;
-              clearVoicePressTimer();
-              if (voiceLongPressRef.current) speech.stop();
-              voiceLongPressRef.current = false;
-            }}
-            aria-label={k.label}
-            aria-pressed={k.id === 'voice' ? speech.listening : undefined}
-            disabled={k.id === 'voice' && (!speech.supported || speech.state === 'processing')}
-          >
-            {'glyph' in k ? (
-              k.glyph
-            ) : (
-              <>
-                <img src={k.icon} alt="" aria-hidden />
-                {k.id === 'voice' && <span>{speech.listening ? '听写中' : speech.state === 'processing' ? '识别中' : '语音'}</span>}
-              </>
+          <span className={`action-key-wrap ${k.id}`} key={k.id}>
+            {activeKeyMenu === k.id && 'longPressOptions' in k && (
+              <span className="key-popover" role="menu">
+                {k.longPressOptions.map((option) => (
+                  <button
+                    key={option.label}
+                    className="key-popover-option"
+                    type="button"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onKey(option.data);
+                      setActiveKeyMenu(null);
+                      keyLongPressRef.current = false;
+                    }}
+                    aria-label={option.label}
+                  >
+                    {option.glyph}
+                  </button>
+                ))}
+              </span>
             )}
-          </button>
+            <button
+              className={`action-btn ${k.id}${k.id === 'escape' ? ' danger' : ''}${activeKeyMenu === k.id ? ' menu-open' : ''}`}
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                if (k.id === 'voice') {
+                  startVoicePress();
+                  return;
+                }
+                if ('longPressOptions' in k) {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  keyLongPressRef.current = false;
+                  clearKeyPressTimer();
+                  keyPressTimerRef.current = window.setTimeout(() => {
+                    keyLongPressRef.current = true;
+                    setActiveKeyMenu(k.id);
+                  }, KEY_LONG_PRESS_MS);
+                  return;
+                }
+                if ('data' in k) onKey(k.data);
+              }}
+              onPointerUp={(e) => {
+                if (k.id === 'voice') {
+                  e.preventDefault();
+                  endVoicePress();
+                  return;
+                }
+                if (!('longPressOptions' in k)) return;
+                e.preventDefault();
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                }
+                clearKeyPressTimer();
+                if (!keyLongPressRef.current) {
+                  onKey(k.data);
+                }
+                keyLongPressRef.current = false;
+              }}
+              onPointerCancel={(e) => {
+                if (k.id === 'voice') {
+                  clearVoicePressTimer();
+                  if (voiceLongPressRef.current) speech.stop();
+                  voiceLongPressRef.current = false;
+                  return;
+                }
+                if (!('longPressOptions' in k)) return;
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                }
+                clearKeyPressTimer();
+                keyLongPressRef.current = false;
+              }}
+              aria-label={k.label}
+              aria-pressed={k.id === 'voice' ? speech.listening : undefined}
+              disabled={k.id === 'voice' && (!speech.supported || speech.state === 'processing')}
+            >
+              {'glyph' in k ? (
+                k.glyph
+              ) : (
+                <>
+                  <img src={k.icon} alt="" aria-hidden />
+                  {k.id === 'voice' && <span>{speech.listening ? '听写中' : speech.state === 'processing' ? '识别中' : '语音'}</span>}
+                </>
+              )}
+            </button>
+          </span>
         ))}
       </div>
     </div>
