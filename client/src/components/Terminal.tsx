@@ -70,6 +70,20 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
     let scrollPixelRemainder = 0;
     const scrollByPixels = (deltaY: number) => {
       const lineHeight = Math.max(1, term.rows > 0 ? container.clientHeight / term.rows : 20);
+      if (term.buffer.active.type === 'alternate') {
+        const threshold = lineHeight * 4;
+        const total = scrollPixelRemainder + deltaY;
+        const pages = total > 0 ? Math.floor(total / threshold) : Math.ceil(total / threshold);
+        if (pages === 0) {
+          scrollPixelRemainder = total;
+          return;
+        }
+        scrollPixelRemainder = total - pages * threshold;
+        const key = pages > 0 ? '\x1b[6~' : '\x1b[5~';
+        const count = Math.min(Math.abs(pages), 2);
+        onDataRef.current?.(key.repeat(count));
+        return;
+      }
       const total = scrollPixelRemainder + deltaY;
       const lines = total > 0 ? Math.floor(total / lineHeight) : Math.ceil(total / lineHeight);
       if (lines === 0) {
@@ -106,9 +120,31 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
     const ro = new ResizeObserver(() => doFit());
     ro.observe(container);
 
-    // 移动端触摸滚动:xterm 的 screen(canvas)与 viewport 是兄弟,触摸命中 canvas 不滚 viewport
-    // (桌面靠 wheel,移动端无 wheel)。这里手动按滑动距离调 scrollLines,接管 scrollback 滚动。
+    // 移动端触摸滚动:xterm 的 screen(canvas)与 viewport 是兄弟,触摸命中 canvas 不滚 viewport。
+    // Chrome 移动模拟会用鼠标 pointer,因此保留 touch 主路径并补一个 mouse drag fallback。
+    let mouseDragging = false;
+    let lastPointerY = 0;
     let lastTouchY = 0;
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      mouseDragging = true;
+      lastPointerY = e.clientY;
+      scrollPixelRemainder = 0;
+      container.setPointerCapture(e.pointerId);
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!mouseDragging || e.pointerType !== 'mouse') return;
+      const dy = lastPointerY - e.clientY;
+      lastPointerY = e.clientY;
+      scrollByPixels(dy);
+      e.preventDefault();
+    };
+    const onPointerEnd = (e: PointerEvent) => {
+      if (!mouseDragging || e.pointerType !== 'mouse') return;
+      mouseDragging = false;
+      scrollPixelRemainder = 0;
+      if (container.hasPointerCapture(e.pointerId)) container.releasePointerCapture(e.pointerId);
+    };
     const onTouchStart = (e: TouchEvent) => {
       lastTouchY = e.touches[0]?.clientY ?? lastTouchY;
       scrollPixelRemainder = 0;
@@ -121,6 +157,10 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
       scrollByPixels(dy);
       e.preventDefault(); // 阻止页面/容器默认滚动,滚动完全由这里接管
     };
+    container.addEventListener('pointerdown', onPointerDown);
+    container.addEventListener('pointermove', onPointerMove, { passive: false });
+    container.addEventListener('pointerup', onPointerEnd);
+    container.addEventListener('pointercancel', onPointerEnd);
     container.addEventListener('touchstart', onTouchStart, { passive: true });
     container.addEventListener('touchmove', onTouchMove, { passive: false });
 
@@ -128,6 +168,10 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
       cancelAnimationFrame(kbRaf);
       cancelAnimationFrame(raf);
       ro.disconnect();
+      container.removeEventListener('pointerdown', onPointerDown);
+      container.removeEventListener('pointermove', onPointerMove);
+      container.removeEventListener('pointerup', onPointerEnd);
+      container.removeEventListener('pointercancel', onPointerEnd);
       container.removeEventListener('touchstart', onTouchStart);
       container.removeEventListener('touchmove', onTouchMove);
       term.dispose();
