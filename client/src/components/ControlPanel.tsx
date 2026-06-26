@@ -325,6 +325,7 @@ export function ControlPanel({ onKey, speech, keyboardEnabled, onToggleKeyboard,
               ) : (
                 <>
                   <img src={k.icon} alt="" aria-hidden />
+                  {'longPressOptions' in k && <span className="action-btn-more-mark" aria-hidden />}
                   {k.id === 'voice' && <span>{speech.listening ? '听写中' : speech.state === 'processing' ? '识别中' : '语音'}</span>}
                 </>
               )}
