@@ -70,21 +70,7 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
                     </p>
                   ))}
                 </div>
-                <div className="voice-prompt-summary" aria-label="语音整理提示词">
-                  <p className="voice-command-line">
-                    <span>refine</span>
-                    <code>{config?.voiceSettings?.refinePrompt?.enabled ? 'enabled' : 'disabled'}</code>
-                  </p>
-                  <p className="voice-command-line">
-                    <span>system</span>
-                    <code>{config?.voiceSettings?.refinePrompt?.system?.length ?? 0} lines</code>
-                  </p>
-                  <p className="voice-command-line">
-                    <span>user</span>
-                    <code>{config?.voiceSettings?.refinePrompt?.userTemplate || '-'}</code>
-                  </p>
-                </div>
-                <p className="hint">需要调整键盘指令、别名或整理提示词时,直接编辑 server/config/settings.json。</p>
+                <p className="hint">需要调整键盘指令或别名时,直接编辑 server/config/settings.json。</p>
               </section>
               <ul className="config-list">
                 {draft.map((c) => (

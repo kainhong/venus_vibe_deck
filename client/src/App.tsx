@@ -7,6 +7,7 @@ import { StatusBar } from './components/StatusBar';
 import { SettingsPage } from './components/SettingsPage';
 import { NewSessionPanel } from './components/NewSessionPanel';
 import { SessionHistoryPanel, type SessionHistoryEntry } from './components/SessionHistoryPanel';
+import { AboutPanel } from './components/AboutPanel';
 import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrowserSpeechRecognition';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import voiceIcon from './asserts/icons/voice.svg';
@@ -14,7 +15,7 @@ import voiceIcon from './asserts/icons/voice.svg';
 const IMMERSIVE_LONG_PRESS_MS = 400;
 const SESSION_HISTORY_STORAGE_KEY = 'venus-vibe-deck.session-history.v1';
 
-type View = 'terminal' | 'settings' | 'newSession' | 'history';
+type View = 'terminal' | 'settings' | 'newSession' | 'history' | 'about';
 
 export default function App() {
   usePushNotifications();
@@ -246,6 +247,7 @@ export default function App() {
         onNew={() => setView('newSession')}
         onHistory={() => setView('history')}
         onSettings={() => setView('settings')}
+        onAbout={() => setView('about')}
         onCloseCurrent={closeCurrent}
         bellActive={bellActive}
       />
@@ -347,6 +349,7 @@ export default function App() {
       )}
 
       {view === 'settings' && <SettingsPage onClose={() => setView('terminal')} />}
+      {view === 'about' && <AboutPanel onClose={() => setView('terminal')} />}
       {view === 'history' && (
         <SessionHistoryPanel
           entries={sessionHistory}

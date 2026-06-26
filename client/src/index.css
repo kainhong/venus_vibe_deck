@@ -868,6 +868,36 @@ textarea {
   filter: invert(35%) sepia(75%) saturate(1665%) hue-rotate(326deg) brightness(92%) contrast(94%);
 }
 
+.about-panel {
+  max-width: 420px;
+}
+
+.about-body {
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.about-title {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.about-meta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.about-qrcode {
+  width: min(280px, 78vw);
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+  background: #fff;
+}
+
 .config-list {
   list-style: none;
   margin: 0;

@@ -11,6 +11,7 @@ interface StatusBarProps {
   onNew: () => void;
   onHistory: () => void;
   onSettings: () => void;
+  onAbout: () => void;
   onCloseCurrent: () => void;
   bellActive?: boolean;
 }
@@ -18,7 +19,7 @@ interface StatusBarProps {
 /**
  * 顶部状态栏:连接状态 + Session 下拉 + 常用会话操作。
  */
-export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onHistory, onSettings, onCloseCurrent, bellActive = false }: StatusBarProps) {
+export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onHistory, onSettings, onAbout, onCloseCurrent, bellActive = false }: StatusBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -30,11 +31,6 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
   }, [menuOpen]);
-
-  const showAbout = () => {
-    setMenuOpen(false);
-    alert('Venus Vibe Deck');
-  };
 
   return (
     <header className="status-bar">
@@ -75,7 +71,7 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
               <button type="button" className="header-menu-item" onClick={() => { setMenuOpen(false); onSettings(); }}>
                 设置
               </button>
-              <button type="button" className="header-menu-item" onClick={showAbout}>
+              <button type="button" className="header-menu-item" onClick={() => { setMenuOpen(false); onAbout(); }}>
                 关于
               </button>
             </div>
