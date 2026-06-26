@@ -929,7 +929,7 @@ textarea {
   inset: 0;
   z-index: 205;
   background: transparent;
-  touch-action: pan-y;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
 

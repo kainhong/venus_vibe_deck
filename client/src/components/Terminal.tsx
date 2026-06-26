@@ -6,6 +6,7 @@ import '@xterm/xterm/css/xterm.css';
 export interface TerminalWriter {
   write: (data: string) => void;
   clear: () => void;
+  scrollByPixels: (deltaY: number) => void;
 }
 
 interface TerminalViewProps {
@@ -66,6 +67,18 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
       },
     });
     termRef.current = term;
+    let scrollPixelRemainder = 0;
+    const scrollByPixels = (deltaY: number) => {
+      const lineHeight = Math.max(1, term.rows > 0 ? container.clientHeight / term.rows : 20);
+      const total = scrollPixelRemainder + deltaY;
+      const lines = total > 0 ? Math.floor(total / lineHeight) : Math.ceil(total / lineHeight);
+      if (lines === 0) {
+        scrollPixelRemainder = total;
+        return;
+      }
+      scrollPixelRemainder = total - lines * lineHeight;
+      term.scrollLines(lines);
+    };
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.open(container);
@@ -85,6 +98,7 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
     registerWriterRef.current?.({
       write: (d: string) => term.write(d),
       clear: () => term.reset(),
+      scrollByPixels,
     });
 
     doFit();
@@ -97,18 +111,15 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
     let lastTouchY = 0;
     const onTouchStart = (e: TouchEvent) => {
       lastTouchY = e.touches[0]?.clientY ?? lastTouchY;
+      scrollPixelRemainder = 0;
     };
     const onTouchMove = (e: TouchEvent) => {
       const touch = e.touches[0];
       if (!touch) return;
       const dy = lastTouchY - touch.clientY; // 手指上滑 dy>0 → 向下查看后续内容
       lastTouchY = touch.clientY;
-      const lineHeight = term.rows > 0 ? container.clientHeight / term.rows : 20;
-      const lines = Math.round(dy / lineHeight);
-      if (lines !== 0) {
-        term.scrollLines(lines);
-        e.preventDefault(); // 阻止页面/容器默认滚动,滚动完全由这里接管
-      }
+      scrollByPixels(dy);
+      e.preventDefault(); // 阻止页面/容器默认滚动,滚动完全由这里接管
     };
     container.addEventListener('touchstart', onTouchStart, { passive: true });
     container.addEventListener('touchmove', onTouchMove, { passive: false });

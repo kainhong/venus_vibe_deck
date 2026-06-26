@@ -40,6 +40,7 @@ export default function App() {
   const immersivePressTimerRef = useRef<number | undefined>(undefined);
   const immersiveLongPressRef = useRef(false);
   const immersiveStartYRef = useRef(0);
+  const immersiveLastYRef = useRef(0);
   const immersiveScrollingRef = useRef(false);
 
   const handleSpeechResult = useCallback((result: SpeechResult) => {
@@ -213,18 +214,23 @@ export default function App() {
               if (speech.state === 'processing') return;
               immersiveScrollingRef.current = false;
               immersiveStartYRef.current = e.clientY;
+              immersiveLastYRef.current = e.clientY;
               e.currentTarget.setPointerCapture(e.pointerId);
               startImmersivePress({ x: e.clientX, y: e.clientY });
             }}
             onPointerMove={(e) => {
-              if (immersiveScrollingRef.current || immersiveLongPressRef.current) return;
+              if (immersiveLongPressRef.current) return;
+              if (immersiveScrollingRef.current) {
+                writerRef.current?.scrollByPixels(immersiveLastYRef.current - e.clientY);
+                immersiveLastYRef.current = e.clientY;
+                return;
+              }
               const dy = Math.abs(e.clientY - immersiveStartYRef.current);
               if (dy > 10) {
                 immersiveScrollingRef.current = true;
+                writerRef.current?.scrollByPixels(immersiveStartYRef.current - e.clientY);
+                immersiveLastYRef.current = e.clientY;
                 clearImmersiveTimer();
-                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-                  e.currentTarget.releasePointerCapture(e.pointerId);
-                }
                 setImmersiveVoicePoint(null);
               }
             }}
