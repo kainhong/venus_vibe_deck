@@ -31,9 +31,10 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
 
   /**
    * 应用键盘开关。
-   * xterm 的 disableStdin 只是不处理输入,**不阻止其内部隐藏 textarea 聚焦**,
-   * 因而移动端点击终端仍会唤起软键盘。故额外把该 textarea 设为 readonly + inputmode=none,
-   * 真正阻止虚拟键盘(WHATWG: inputmode=none 表示不显示虚拟键盘)。
+   * xterm 的 disableStdin 只是不处理输入,不阻止其内部隐藏 textarea 聚焦,
+   * 故移动端点击终端仍会唤起软键盘。这里用 inputmode=none(WHATWG:不显示虚拟键盘)阻止键盘。
+   * **不设 readonly**:readonly 在移动端会触发"文本选择"手势吞掉 touchmove,
+   * 导致 terminal 无法触摸滚动 scrollback(配合 CSS `.xterm textarea { touch-action: pan-y }`)。
    */
   const applyKeyboard = (enabled: boolean) => {
     const term = termRef.current;
@@ -42,10 +43,8 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
     const ta = containerRef.current?.querySelector<HTMLTextAreaElement>('textarea');
     if (!ta) return;
     if (enabled) {
-      ta.removeAttribute('readonly');
       ta.removeAttribute('inputmode');
     } else {
-      ta.setAttribute('readonly', '');
       ta.setAttribute('inputmode', 'none');
     }
   };
@@ -93,10 +92,33 @@ export function TerminalView({ onData, onResize, registerWriter, keyboardEnabled
     const ro = new ResizeObserver(() => doFit());
     ro.observe(container);
 
+    // 移动端触摸滚动:xterm 的 screen(canvas)与 viewport 是兄弟,触摸命中 canvas 不滚 viewport
+    // (桌面靠 wheel,移动端无 wheel)。这里手动按滑动距离调 scrollLines,接管 scrollback 滚动。
+    let lastTouchY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      lastTouchY = e.touches[0]?.clientY ?? lastTouchY;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      const dy = lastTouchY - touch.clientY; // 手指上滑 dy>0 → 向下查看后续内容
+      lastTouchY = touch.clientY;
+      const lineHeight = term.rows > 0 ? container.clientHeight / term.rows : 20;
+      const lines = Math.round(dy / lineHeight);
+      if (lines !== 0) {
+        term.scrollLines(lines);
+        e.preventDefault(); // 阻止页面/容器默认滚动,滚动完全由这里接管
+      }
+    };
+    container.addEventListener('touchstart', onTouchStart, { passive: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+
     return () => {
       cancelAnimationFrame(kbRaf);
       cancelAnimationFrame(raf);
       ro.disconnect();
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
       term.dispose();
       termRef.current = null;
     };

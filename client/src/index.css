@@ -210,6 +210,11 @@ textarea {
   padding: 10px;
 }
 
+/* 终端触摸层:禁止浏览器默认触摸(pan/缩放),由 JS 按行滚动 scrollback(见 Terminal.tsx) */
+.terminal-container .xterm {
+  touch-action: none;
+}
+
 .control-panel {
   flex: 0 0 auto;
   display: flex;
