@@ -3,6 +3,8 @@ import type { SessionInfo } from '../types';
 import linkIcon from '../asserts/icons/link.svg';
 import linkBrokenIcon from '../asserts/icons/unlink.svg';
 
+const SESSION_ID_LEN = 8;
+
 interface StatusBarProps {
   connected: boolean;
   sessions: SessionInfo[];
@@ -47,7 +49,7 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
         {sessions.length === 0 && <option value="">未创建会话</option>}
         {sessions.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.name} {s.alive ? '' : '(已退出)'}
+            {formatSessionLabel(s)} {s.alive ? '' : '(已退出)'}
           </option>
         ))}
       </select>
@@ -80,4 +82,9 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
       </div>
     </header>
   );
+}
+
+function formatSessionLabel(session: SessionInfo): string {
+  const shortId = session.id.slice(0, SESSION_ID_LEN);
+  return session.name.endsWith(`-${shortId}`) ? session.name : `${session.name}-${shortId}`;
 }

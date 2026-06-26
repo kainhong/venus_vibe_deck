@@ -28,20 +28,18 @@ export class ClientConnection {
         this.send({ type: 'session_list', sessions: event.sessions });
       }
       if (event.type === 'notification') {
-        if (!event.sessionId || event.sessionId === this.currentSessionId) {
-          this.send({
-            type: 'terminal_bell',
-            sessionId: event.sessionId,
-            at: event.at,
-            source: event.source,
-            message: event.message,
-          });
-          logger.info('notification sent to websocket', {
-            sessionId: event.sessionId,
-            currentSessionId: this.currentSessionId,
-            source: event.source,
-          });
-        }
+        this.send({
+          type: 'terminal_bell',
+          sessionId: event.sessionId,
+          at: event.at,
+          source: event.source,
+          message: event.message,
+        });
+        logger.info('notification sent to websocket', {
+          sessionId: event.sessionId,
+          currentSessionId: this.currentSessionId,
+          source: event.source,
+        });
       }
     });
     ws.on('message', (raw) => this.onMessage(raw));

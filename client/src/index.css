@@ -788,6 +788,11 @@ textarea {
   background: #f3f7ff;
 }
 
+.history-entry.attention {
+  border-color: #ffb4b8;
+  background: #fff7f7;
+}
+
 .history-entry-main {
   flex: 1 1 auto;
   min-width: 0;
@@ -823,6 +828,22 @@ textarea {
   font-weight: 650;
 }
 
+.history-entry-name-wrap {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-alert-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.14);
+  flex: 0 0 auto;
+}
+
 .history-entry-badge {
   flex: 0 0 auto;
   border-radius: 999px;
@@ -835,6 +856,10 @@ textarea {
 
 .history-entry-badge.live {
   background: var(--ok);
+}
+
+.history-entry-badge.attention {
+  background: var(--danger);
 }
 
 .history-entry-path,

@@ -16,6 +16,7 @@ const IMMERSIVE_LONG_PRESS_MS = 400;
 const SESSION_HISTORY_STORAGE_KEY = 'venus-vibe-deck.session-history.v1';
 
 type View = 'terminal' | 'settings' | 'newSession' | 'history' | 'about';
+type SessionAlert = { at: number; source?: string; message?: string };
 
 export default function App() {
   usePushNotifications();
@@ -30,6 +31,7 @@ export default function App() {
   const { config, recordWorkspace } = useApp();
   const [view, setView] = useState<View>('terminal');
   const [sessionHistory, setSessionHistory] = useState<SessionHistoryEntry[]>(() => readSessionHistory());
+  const [sessionAlerts, setSessionAlerts] = useState<Record<string, SessionAlert>>({});
   const pendingHistoryRef = useRef<SessionHistoryEntry | null>(null);
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
   const [immersive, setImmersive] = useState(false);
@@ -79,6 +81,40 @@ export default function App() {
     onResult: handleSpeechResult,
     onError: (message) => alert(message),
   });
+
+  useEffect(() => {
+    const notification = api.lastNotification;
+    if (!notification?.sessionId) return;
+    if (notification.sessionId === api.currentSessionId) return;
+    setSessionAlerts((prev) => ({
+      ...prev,
+      [notification.sessionId!]: {
+        at: notification.at,
+        source: notification.source,
+        message: notification.message,
+      },
+    }));
+    if (document.visibilityState === 'hidden') {
+      pendingHiddenBellRef.current = true;
+      return;
+    }
+    setBellActive(true);
+    navigator.vibrate?.(80);
+    const timer = window.setTimeout(() => {
+      setBellActive(false);
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, [api.currentSessionId, api.lastNotification]);
+
+  useEffect(() => {
+    if (!api.currentSessionId) return;
+    setSessionAlerts((prev) => {
+      if (!prev[api.currentSessionId!]) return prev;
+      const next = { ...prev };
+      delete next[api.currentSessionId!];
+      return next;
+    });
+  }, [api.currentSessionId]);
 
   useEffect(() => {
     if (!api.lastBellAt) return;
@@ -203,10 +239,26 @@ export default function App() {
     })));
   }, [api.lastCreatedSessionId]);
 
+  const clearSessionAlert = useCallback((sessionId: string | undefined) => {
+    if (!sessionId) return;
+    setSessionAlerts((prev) => {
+      if (!prev[sessionId]) return prev;
+      const next = { ...prev };
+      delete next[sessionId];
+      return next;
+    });
+  }, []);
+
+  const switchSession = useCallback((sessionId: string) => {
+    clearSessionAlert(sessionId);
+    api.switchSession(sessionId);
+  }, [api, clearSessionAlert]);
+
   const connectHistory = useCallback((entry: SessionHistoryEntry) => {
     const live = entry.sessionId && api.sessions.some((s) => s.id === entry.sessionId && s.alive);
     setSessionHistory((prev) => persistSessionHistory(upsertSessionHistory(prev, { ...entry, updatedAt: Date.now() })));
     if (live && entry.sessionId) {
+      clearSessionAlert(entry.sessionId);
       api.switchSession(entry.sessionId);
       setView('terminal');
       return;
@@ -224,14 +276,15 @@ export default function App() {
     api.createSession(opts);
     if (entry.cwd) void recordWorkspace(entry.cwd);
     setView('terminal');
-  }, [api, recordWorkspace]);
+  }, [api, clearSessionAlert, recordWorkspace]);
 
   const deleteHistory = useCallback((entry: SessionHistoryEntry) => {
     if (entry.sessionId && api.sessions.some((s) => s.id === entry.sessionId && s.alive)) {
       api.destroySession(entry.sessionId);
     }
+    clearSessionAlert(entry.sessionId);
     setSessionHistory((prev) => persistSessionHistory(prev.filter((item) => item.key !== entry.key)));
-  }, [api]);
+  }, [api, clearSessionAlert]);
 
   const closeCurrent = useCallback(() => {
     if (api.currentSessionId) api.destroySession(api.currentSessionId);
@@ -243,7 +296,7 @@ export default function App() {
         connected={api.connected}
         sessions={api.sessions}
         currentSessionId={api.currentSessionId}
-        onSelect={api.switchSession}
+        onSelect={switchSession}
         onNew={() => setView('newSession')}
         onHistory={() => setView('history')}
         onSettings={() => setView('settings')}
@@ -355,6 +408,7 @@ export default function App() {
           entries={sessionHistory}
           sessions={api.sessions}
           currentSessionId={api.currentSessionId}
+          alerts={sessionAlerts}
           onClose={() => setView('terminal')}
           onConnect={connectHistory}
           onDelete={deleteHistory}
