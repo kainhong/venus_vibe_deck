@@ -10,10 +10,12 @@ import { SessionHistoryPanel, type SessionHistoryEntry } from './components/Sess
 import { AboutPanel } from './components/AboutPanel';
 import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrowserSpeechRecognition';
 import { usePushNotifications } from './hooks/usePushNotifications';
+import { api as httpApi } from './api/http';
 import voiceIcon from './asserts/icons/voice.svg';
 
 const IMMERSIVE_LONG_PRESS_MS = 400;
 const SESSION_HISTORY_STORAGE_KEY = 'venus-vibe-deck.session-history.v1';
+const SESSION_HISTORY_LIMIT = 10;
 
 type View = 'terminal' | 'settings' | 'newSession' | 'history' | 'about';
 type SessionAlert = { at: number; source?: string; message?: string };
@@ -219,10 +221,27 @@ export default function App() {
   } as CSSProperties : undefined;
 
   const handleCreate = useCallback(
-    (opts: CreateSessionOptions) => {
-      if (opts.cwd) pendingHistoryRef.current = buildHistoryEntry(opts);
-      api.createSession(opts);
-      if (opts.cwd) recordWorkspace(opts.cwd); // 乐观记录 workspace 历史
+    async (opts: CreateSessionOptions) => {
+      try {
+        const prepared = opts.useGitWorktree && opts.cwd && opts.requestedWorktreeName
+          ? await httpApi.prepareWorktree({ cwd: opts.cwd, name: opts.requestedWorktreeName })
+          : null;
+        const finalOpts: CreateSessionOptions = prepared
+          ? {
+              ...opts,
+              cwd: prepared.cwd,
+              sourceWorkspace: prepared.sourceWorkspace,
+              worktreeName: prepared.worktreeName,
+              worktreeBranch: prepared.worktreeBranch,
+            }
+          : opts;
+        if (finalOpts.cwd) pendingHistoryRef.current = buildHistoryEntry(finalOpts);
+        api.createSession(toWsCreateOptions(finalOpts));
+        if (finalOpts.cwd) recordWorkspace(finalOpts.cwd); // 乐观记录 workspace 历史
+      } catch (err) {
+        alert((err as Error).message || '创建 worktree 失败');
+        return;
+      }
       setView('terminal');
     },
     [api, recordWorkspace],
@@ -271,9 +290,12 @@ export default function App() {
       resumeArg: entry.resumeArg,
       resume: !!entry.resumeArg,
       name: entry.cliName,
+      sourceWorkspace: entry.sourceWorkspace,
+      worktreeName: entry.worktreeName,
+      worktreeBranch: entry.worktreeBranch,
     };
     pendingHistoryRef.current = buildHistoryEntry(opts);
-    api.createSession(opts);
+    api.createSession(toWsCreateOptions(opts));
     if (entry.cwd) void recordWorkspace(entry.cwd);
     setView('terminal');
   }, [api, clearSessionAlert, recordWorkspace]);
@@ -432,7 +454,22 @@ function buildHistoryEntry(opts: CreateSessionOptions): SessionHistoryEntry {
     args: opts.args,
     resumeArg: opts.resumeArg,
     cwd,
+    sourceWorkspace: opts.sourceWorkspace,
+    worktreeName: opts.worktreeName,
+    worktreeBranch: opts.worktreeBranch,
     updatedAt: Date.now(),
+  };
+}
+
+function toWsCreateOptions(opts: CreateSessionOptions): CreateSessionOptions {
+  return {
+    name: opts.name,
+    cliConfigId: opts.cliConfigId,
+    command_bin: opts.command_bin,
+    args: opts.args,
+    cwd: opts.cwd,
+    resumeArg: opts.resumeArg,
+    resume: opts.resume,
   };
 }
 
@@ -444,7 +481,8 @@ function readSessionHistory(): SessionHistoryEntry[] {
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((item) => item && typeof item.key === 'string' && typeof item.cwd === 'string')
-      .sort((a, b) => b.updatedAt - a.updatedAt);
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, SESSION_HISTORY_LIMIT);
   } catch {
     return [];
   }
@@ -452,14 +490,18 @@ function readSessionHistory(): SessionHistoryEntry[] {
 
 function upsertSessionHistory(entries: SessionHistoryEntry[], entry: SessionHistoryEntry): SessionHistoryEntry[] {
   return [entry, ...entries.filter((item) => item.key !== entry.key)]
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, SESSION_HISTORY_LIMIT);
 }
 
 function persistSessionHistory(entries: SessionHistoryEntry[]): SessionHistoryEntry[] {
+  const limited = entries
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, SESSION_HISTORY_LIMIT);
   try {
-    localStorage.setItem(SESSION_HISTORY_STORAGE_KEY, JSON.stringify(entries));
+    localStorage.setItem(SESSION_HISTORY_STORAGE_KEY, JSON.stringify(limited));
   } catch {
     // 历史持久化失败不影响会话连接。
   }
-  return entries;
+  return limited;
 }

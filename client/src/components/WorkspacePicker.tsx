@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useApp } from '../state/AppContext';
 import type { DirEntry } from '../types';
+import checkIcon from '../asserts/icons/check.svg';
+import cancelIcon from '../asserts/icons/cancel.svg';
+import topIcon from '../asserts/icons/top.svg';
+
+const VISIBLE_WORKSPACE_HISTORY = 5;
 
 /**
  * Workspace 选择器(三合一,spec-ui §8):
@@ -40,30 +45,31 @@ export function WorkspacePicker({ value, onChange }: { value: string; onChange: 
 
   return (
     <div className="workspace-picker">
-      <input
-        className="ws-input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="/path/to/workspace"
-        autoCapitalize="off"
-        autoCorrect="off"
-        spellCheck={false}
-      />
+      <div className="ws-input-row">
+        <input
+          className="ws-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="/path/to/workspace"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+        <button type="button" className={`ws-browse-icon-btn${browsing ? ' active' : ''}`} onClick={toggleBrowse} aria-label={browsing ? '收起浏览' : '浏览目录'}>
+          ⋯
+        </button>
+      </div>
 
       {history && history.workspaces.length > 0 && (
         <div className="ws-history">
           <span className="ws-label">常用:</span>
-          {history.workspaces.map((w) => (
+          {history.workspaces.slice(0, VISIBLE_WORKSPACE_HISTORY).map((w) => (
             <button key={w.path} type="button" className="chip" onClick={() => onChange(w.path)} title={w.path}>
-              {w.path}
+              {formatWorkspaceLabel(w.path)}
             </button>
           ))}
         </div>
       )}
-
-      <button type="button" className="btn-secondary ws-browse-btn" onClick={toggleBrowse}>
-        {browsing ? '收起浏览' : '浏览…'}
-      </button>
 
       {browsing && (
         <div className="ws-browser">
@@ -84,20 +90,32 @@ export function WorkspacePicker({ value, onChange }: { value: string; onChange: 
             )}
           </ul>
           <div className="ws-browser-actions">
-            <button type="button" className="btn-secondary" onClick={() => loadDir()}>根目录</button>
+            <button type="button" className="ws-browser-action-btn" onClick={() => loadDir()} aria-label="根目录" title="根目录">
+              <img src={topIcon} alt="" aria-hidden />
+            </button>
+            <button type="button" className="ws-browser-action-btn" onClick={() => setBrowsing(false)} aria-label="取消" title="取消">
+              <img src={cancelIcon} alt="" aria-hidden />
+            </button>
             <button
               type="button"
-              className="btn-primary"
+              className="ws-browser-action-btn primary"
               onClick={() => {
                 onChange(browsePath);
                 setBrowsing(false);
               }}
+              aria-label="选此目录"
+              title="选此目录"
             >
-              选此目录
+              <img src={checkIcon} alt="" aria-hidden />
             </button>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function formatWorkspaceLabel(path: string): string {
+  const cleaned = path.replace(/\/+$/, '');
+  return cleaned.split('/').filter(Boolean).pop() || cleaned || path;
 }

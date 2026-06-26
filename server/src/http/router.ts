@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { loadConfig, saveConfig, type ConfigDoc } from '../storage/cliConfigStore.js';
 import { addWorkspace, loadHistory } from '../storage/workspaceHistoryStore.js';
 import { listDir } from './listDir.js';
+import { prepareWorktree, type PrepareWorktreeRequest } from './worktree.js';
 import { PathForbiddenError } from '../util/pathGuard.js';
 import { transcribeSpeech } from '../speech/speechService.js';
 import { synthesize } from '../speech/tts.js';
@@ -60,6 +61,11 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
     if (pathname === '/api/dir') {
       if (method !== 'GET') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
       return respond(req, res, startedAt, 200, await listDir(searchParams.get('path') ?? undefined));
+    }
+
+    if (pathname === '/api/worktree/prepare') {
+      if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      return respond(req, res, startedAt, 200, await prepareWorktree(await readBody<PrepareWorktreeRequest>(req)));
     }
 
     if (pathname === '/api/speech/transcribe') {

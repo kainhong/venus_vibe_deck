@@ -48,6 +48,16 @@ export interface CreateSessionOptions {
   resumeArg?: string;
   /** 是否继续上次 CLI 会话 */
   resume?: boolean;
+  /** 新建前是否准备 Git worktree(仅前端使用) */
+  useGitWorktree?: boolean;
+  /** 用户输入/前端生成的 worktree 名称(仅前端使用) */
+  requestedWorktreeName?: string;
+  /** 本地历史元数据:原始 git workspace,不发送给后端使用 */
+  sourceWorkspace?: string;
+  /** 本地历史元数据:worktree 名称 */
+  worktreeName?: string;
+  /** 本地历史元数据:worktree 分支 */
+  worktreeBranch?: string;
 }
 
 export interface WebSocketApi {

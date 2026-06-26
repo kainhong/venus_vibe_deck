@@ -121,3 +121,16 @@ export interface DirListing {
   path: string;
   entries: DirEntry[];
 }
+
+export interface PrepareWorktreeRequest {
+  cwd: string;
+  name: string;
+}
+
+export interface PrepareWorktreeResponse {
+  cwd: string;
+  sourceWorkspace: string;
+  worktreeName: string;
+  worktreeBranch: string;
+  created: boolean;
+}

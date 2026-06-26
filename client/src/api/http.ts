@@ -1,4 +1,4 @@
-import type { ConfigDoc, DirListing, HistoryDoc, SpeechResult, SpeechTranscribeRequest } from '../types';
+import type { ConfigDoc, DirListing, HistoryDoc, PrepareWorktreeRequest, PrepareWorktreeResponse, SpeechResult, SpeechTranscribeRequest } from '../types';
 
 /**
  * 前端 HTTP client —— 同源 fetch /api/*(server 单进程同源,与 WS 一致,无需 base URL)。
@@ -30,6 +30,8 @@ export const api = {
   /** 目录浏览;path 受后端白名单约束,缺省返回第一个允许根 */
   listDir: (path?: string) =>
     getJson<DirListing>(path ? `/api/dir?path=${encodeURIComponent(path)}` : '/api/dir'),
+  prepareWorktree: (req: PrepareWorktreeRequest) =>
+    sendJson<PrepareWorktreeResponse>('POST', '/api/worktree/prepare', req),
   transcribeSpeech: (req: SpeechTranscribeRequest) =>
     sendJson<SpeechResult>('POST', '/api/speech/transcribe', req),
   getPushPublicKey: () => getJson<{ publicKey: string }>('/api/push/public-key'),

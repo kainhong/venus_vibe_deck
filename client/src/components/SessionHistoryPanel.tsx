@@ -11,6 +11,9 @@ export interface SessionHistoryEntry {
   args?: string[];
   resumeArg?: string;
   cwd: string;
+  sourceWorkspace?: string;
+  worktreeName?: string;
+  worktreeBranch?: string;
   sessionId?: string;
   updatedAt: number;
 }
@@ -55,17 +58,23 @@ export function SessionHistoryPanel({
               <div className={`history-entry${isCurrent ? ' current' : ''}${alert ? ' attention' : ''}`} key={entry.key}>
                 <button type="button" className="history-entry-main" onClick={() => onConnect(entry)}>
                   <span className="history-entry-topline">
-                    <span className="history-entry-name-wrap">
-                      <span className="history-entry-name">{formatHistoryTitle(entry)}</span>
-                      {alert && <span className="history-alert-dot" aria-label="有新通知" />}
+                    <span className="history-entry-title-group">
+                      <span className="history-entry-name-wrap">
+                        <span className="history-entry-name">{formatHistoryTitle(entry)}</span>
+                        {alert && <span className="history-alert-dot" aria-label="有新通知" />}
+                      </span>
+                      {isCurrent && <span className="history-entry-badge">当前</span>}
+                      {alert && <span className="history-entry-badge attention">需关注</span>}
+                      {isLive && !isCurrent && <span className="history-entry-badge live">在线</span>}
                     </span>
-                    {isCurrent && <span className="history-entry-badge">当前</span>}
-                    {alert && <span className="history-entry-badge attention">需关注</span>}
-                    {isLive && !isCurrent && <span className="history-entry-badge live">在线</span>}
+                    <span className="history-entry-time">{formatTime(alert?.at ?? entry.updatedAt)}</span>
                   </span>
                   <span className="history-entry-path">{entry.cwd}</span>
+                  {entry.sourceWorkspace && (
+                    <span className="history-entry-source">source: {entry.sourceWorkspace}</span>
+                  )}
                   <span className="history-entry-meta">
-                    {alert ? formatAlertMeta(alert) : formatTime(entry.updatedAt)}
+                    {alert ? formatAlertMeta(alert) : getBranchMeta(entry)}
                   </span>
                 </button>
                 <button
@@ -88,7 +97,11 @@ export function SessionHistoryPanel({
 function formatAlertMeta(alert: { at: number; source?: string; message?: string }): string {
   const source = alert.source || 'Agent';
   const message = alert.message ? ` · ${alert.message}` : '';
-  return `${source} · ${formatTime(alert.at)}${message}`;
+  return `${source}${message}`;
+}
+
+function getBranchMeta(entry: SessionHistoryEntry): string {
+  return entry.worktreeBranch || '';
 }
 
 function formatHistoryTitle(entry: SessionHistoryEntry): string {
@@ -99,12 +112,5 @@ function formatHistoryTitle(entry: SessionHistoryEntry): string {
 
 function formatTime(value: number): string {
   const date = new Date(value);
-  const now = new Date();
-  const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-  return sameDay
-    ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : date.toLocaleDateString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }

@@ -718,6 +718,27 @@ textarea {
   flex: 0 0 auto;
 }
 
+.session-cli-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.session-cli-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.session-resume-field {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  white-space: nowrap;
+}
+
 .hint,
 .empty-hint {
   color: var(--muted);
@@ -814,8 +835,23 @@ textarea {
 .history-entry-topline {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   min-width: 0;
+}
+
+.history-entry-title-group {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-entry-time {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: 8px;
 }
 
 .history-entry-name {
@@ -863,12 +899,17 @@ textarea {
 }
 
 .history-entry-path,
+.history-entry-source,
 .history-entry-meta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--muted);
   font-size: 12px;
+}
+
+.history-entry-source {
+  color: var(--subtle);
 }
 
 .history-delete-btn {
@@ -997,6 +1038,42 @@ textarea {
   min-width: 0;
 }
 
+.ws-input-row {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.ws-input-row .ws-input {
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+}
+
+.ws-browse-icon-btn {
+  flex: 0 0 46px;
+  border: 1px solid var(--line);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ws-browse-icon-btn.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: #d8e6ff;
+}
+
+.ws-input-row:focus-within .ws-input,
+.ws-input-row:focus-within .ws-browse-icon-btn {
+  border-color: #bfd6ff;
+}
+
 .config-name {
   font-size: 15px;
   font-weight: 650;
@@ -1043,6 +1120,38 @@ textarea {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.ws-browser-action-btn {
+  width: 40px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ws-browser-action-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.ws-browser-action-btn img {
+  width: 20px;
+  height: 20px;
+  opacity: 0.78;
+}
+
+.ws-browser-action-btn.primary img {
+  opacity: 1;
+  filter: brightness(0) invert(1);
+}
+
+.ws-browser-action-btn:active {
+  transform: scale(0.96);
 }
 
 .config-actions {
