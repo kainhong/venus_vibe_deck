@@ -750,6 +750,110 @@ textarea {
   padding: 4px 6px;
 }
 
+.history-list {
+  gap: 8px;
+}
+
+.session-history-panel {
+  max-width: 620px;
+}
+
+.history-entry {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 74px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.history-entry.current {
+  border-color: #bfd6ff;
+  background: #f3f7ff;
+}
+
+.history-entry-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 10px 12px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.history-entry-main:active {
+  background: rgba(47, 124, 246, 0.08);
+}
+
+.history-entry-topline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.history-entry-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.history-entry-badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.history-entry-badge.live {
+  background: var(--ok);
+}
+
+.history-entry-path,
+.history-entry-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-delete-btn {
+  flex: 0 0 46px;
+  border: none;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.history-delete-btn:active {
+  background: #fff0f0;
+}
+
+.history-delete-btn img {
+  width: 21px;
+  height: 21px;
+  opacity: 0.72;
+  filter: invert(35%) sepia(75%) saturate(1665%) hue-rotate(326deg) brightness(92%) contrast(94%);
+}
+
 .config-list {
   list-style: none;
   margin: 0;

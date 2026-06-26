@@ -9,6 +9,7 @@ interface StatusBarProps {
   currentSessionId: string | undefined;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onHistory: () => void;
   onSettings: () => void;
   onCloseCurrent: () => void;
   bellActive?: boolean;
@@ -17,7 +18,7 @@ interface StatusBarProps {
 /**
  * 顶部状态栏:连接状态 + Session 下拉 + 常用会话操作。
  */
-export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onSettings, onCloseCurrent, bellActive = false }: StatusBarProps) {
+export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onHistory, onSettings, onCloseCurrent, bellActive = false }: StatusBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +62,9 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
         </button>
         <button type="button" className="header-btn danger" onClick={onCloseCurrent} aria-label="关闭当前会话" disabled={!currentSessionId}>
           ×
+        </button>
+        <button type="button" className="header-btn" onClick={onHistory} aria-label="历史会话">
+          ↺
         </button>
         <div className="header-menu-wrap" ref={menuRef}>
           <button type="button" className="header-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="更多">

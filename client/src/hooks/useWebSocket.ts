@@ -54,6 +54,7 @@ export interface WebSocketApi {
   connected: boolean;
   sessions: SessionInfo[];
   currentSessionId: string | undefined;
+  lastCreatedSessionId: string | undefined;
   lastBellAt: number | undefined;
   lastBellMessage: string | undefined;
   lastBellSource: string | undefined;
@@ -84,6 +85,7 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
   const [connected, setConnected] = useState(false);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(undefined);
+  const [lastCreatedSessionId, setLastCreatedSessionId] = useState<string | undefined>(undefined);
   const [lastBellAt, setLastBellAt] = useState<number | undefined>(undefined);
   const [lastBellMessage, setLastBellMessage] = useState<string | undefined>(undefined);
   const [lastBellSource, setLastBellSource] = useState<string | undefined>(undefined);
@@ -181,6 +183,7 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
             onResetRef.current?.();
             currentRef.current = msg.sessionId;
             setCurrentSessionId(msg.sessionId);
+            setLastCreatedSessionId(msg.sessionId);
             writeSessionToken(msg.sessionId);
             break;
           case 'session_destroyed':
@@ -312,6 +315,7 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
     connected,
     sessions,
     currentSessionId,
+    lastCreatedSessionId,
     lastBellAt,
     lastBellMessage,
     lastBellSource,

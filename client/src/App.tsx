@@ -6,13 +6,15 @@ import { ControlPanel } from './components/ControlPanel';
 import { StatusBar } from './components/StatusBar';
 import { SettingsPage } from './components/SettingsPage';
 import { NewSessionPanel } from './components/NewSessionPanel';
+import { SessionHistoryPanel, type SessionHistoryEntry } from './components/SessionHistoryPanel';
 import { useBrowserSpeechRecognition, type SpeechResult } from './hooks/useBrowserSpeechRecognition';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import voiceIcon from './asserts/icons/voice.svg';
 
 const IMMERSIVE_LONG_PRESS_MS = 400;
+const SESSION_HISTORY_STORAGE_KEY = 'venus-vibe-deck.session-history.v1';
 
-type View = 'terminal' | 'settings' | 'newSession';
+type View = 'terminal' | 'settings' | 'newSession' | 'history';
 
 export default function App() {
   usePushNotifications();
@@ -26,6 +28,8 @@ export default function App() {
   const api = useWebSocket(handleData, handleReset);
   const { config, recordWorkspace } = useApp();
   const [view, setView] = useState<View>('terminal');
+  const [sessionHistory, setSessionHistory] = useState<SessionHistoryEntry[]>(() => readSessionHistory());
+  const pendingHistoryRef = useRef<SessionHistoryEntry | null>(null);
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
   const [immersive, setImmersive] = useState(false);
   const [immersivePending, setImmersivePending] = useState(false);
@@ -179,12 +183,54 @@ export default function App() {
 
   const handleCreate = useCallback(
     (opts: CreateSessionOptions) => {
+      if (opts.cwd) pendingHistoryRef.current = buildHistoryEntry(opts);
       api.createSession(opts);
       if (opts.cwd) recordWorkspace(opts.cwd); // 乐观记录 workspace 历史
       setView('terminal');
     },
     [api, recordWorkspace],
   );
+
+  useEffect(() => {
+    const pending = pendingHistoryRef.current;
+    if (!pending || !api.lastCreatedSessionId) return;
+    pendingHistoryRef.current = null;
+    setSessionHistory((prev) => persistSessionHistory(upsertSessionHistory(prev, {
+      ...pending,
+      sessionId: api.lastCreatedSessionId,
+      updatedAt: Date.now(),
+    })));
+  }, [api.lastCreatedSessionId]);
+
+  const connectHistory = useCallback((entry: SessionHistoryEntry) => {
+    const live = entry.sessionId && api.sessions.some((s) => s.id === entry.sessionId && s.alive);
+    setSessionHistory((prev) => persistSessionHistory(upsertSessionHistory(prev, { ...entry, updatedAt: Date.now() })));
+    if (live && entry.sessionId) {
+      api.switchSession(entry.sessionId);
+      setView('terminal');
+      return;
+    }
+    const opts: CreateSessionOptions = {
+      cliConfigId: entry.cliConfigId,
+      command_bin: entry.command,
+      args: entry.args,
+      cwd: entry.cwd,
+      resumeArg: entry.resumeArg,
+      resume: !!entry.resumeArg,
+      name: entry.cliName,
+    };
+    pendingHistoryRef.current = buildHistoryEntry(opts);
+    api.createSession(opts);
+    if (entry.cwd) void recordWorkspace(entry.cwd);
+    setView('terminal');
+  }, [api, recordWorkspace]);
+
+  const deleteHistory = useCallback((entry: SessionHistoryEntry) => {
+    if (entry.sessionId && api.sessions.some((s) => s.id === entry.sessionId && s.alive)) {
+      api.destroySession(entry.sessionId);
+    }
+    setSessionHistory((prev) => persistSessionHistory(prev.filter((item) => item.key !== entry.key)));
+  }, [api]);
 
   const closeCurrent = useCallback(() => {
     if (api.currentSessionId) api.destroySession(api.currentSessionId);
@@ -198,6 +244,7 @@ export default function App() {
         currentSessionId={api.currentSessionId}
         onSelect={api.switchSession}
         onNew={() => setView('newSession')}
+        onHistory={() => setView('history')}
         onSettings={() => setView('settings')}
         onCloseCurrent={closeCurrent}
         bellActive={bellActive}
@@ -300,9 +347,62 @@ export default function App() {
       )}
 
       {view === 'settings' && <SettingsPage onClose={() => setView('terminal')} />}
+      {view === 'history' && (
+        <SessionHistoryPanel
+          entries={sessionHistory}
+          sessions={api.sessions}
+          currentSessionId={api.currentSessionId}
+          onClose={() => setView('terminal')}
+          onConnect={connectHistory}
+          onDelete={deleteHistory}
+        />
+      )}
       {view === 'newSession' && (
         <NewSessionPanel onClose={() => setView('terminal')} onCreate={handleCreate} />
       )}
     </div>
   );
+}
+
+function buildHistoryEntry(opts: CreateSessionOptions): SessionHistoryEntry {
+  const cwd = opts.cwd?.trim() ?? '';
+  const typeKey = opts.cliConfigId || opts.command_bin || opts.name || 'default';
+  return {
+    key: `${typeKey}::${cwd}`,
+    cliConfigId: opts.cliConfigId,
+    cliName: opts.name || opts.command_bin || opts.cliConfigId || '默认会话',
+    command: opts.command_bin,
+    args: opts.args,
+    resumeArg: opts.resumeArg,
+    cwd,
+    updatedAt: Date.now(),
+  };
+}
+
+function readSessionHistory(): SessionHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(SESSION_HISTORY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as SessionHistoryEntry[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item) => item && typeof item.key === 'string' && typeof item.cwd === 'string')
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+  } catch {
+    return [];
+  }
+}
+
+function upsertSessionHistory(entries: SessionHistoryEntry[], entry: SessionHistoryEntry): SessionHistoryEntry[] {
+  return [entry, ...entries.filter((item) => item.key !== entry.key)]
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+function persistSessionHistory(entries: SessionHistoryEntry[]): SessionHistoryEntry[] {
+  try {
+    localStorage.setItem(SESSION_HISTORY_STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    // 历史持久化失败不影响会话连接。
+  }
+  return entries;
 }
