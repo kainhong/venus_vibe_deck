@@ -1,0 +1,28 @@
+# 虚拟环境与模型(体积巨大,绝不进 build context)
+.venv/
+venv/
+models/
+
+# Python 缓存 / 产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.uv-cache/
+
+# 测试脚本(dev 用,不进生产镜像)
+test/
+
+# 运行时数据 / 日志
+data/
+*.log
+
+# Git / 编辑器 / 本地脚本
+.git/
+.gitignore
+.DS_Store
+.env*
+.python-version
+README.md
+start.sh

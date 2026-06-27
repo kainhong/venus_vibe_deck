@@ -1,0 +1,16 @@
+services:
+  stt-server:
+    build: .
+    image: venus-stt-server:latest
+    container_name: venus-stt-server
+    ports:
+      - "7000:7000"
+    volumes:
+      # 挂载本地模型(避免首次联网下载 500MB+);不挂载则 FunASR 自动下载到 MODELSCOPE_CACHE(/app)
+      - ./models:/app/models
+    environment:
+      STT_HOST: 0.0.0.0
+      STT_PORT: "7000"
+      STT_DEVICE: cpu        # 有 GPU 改 cuda(并改用 nvidia/cuda 基础镜像 + deploy.resources GPU)
+      STT_MODEL: ./models/iic/SenseVoiceSmall   # 指向挂载的本地模型
+    restart: unless-stopped
