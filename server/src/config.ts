@@ -18,6 +18,12 @@ export const config = {
   /** 默认终端尺寸 */
   cols: Number(process.env.PTY_COLS ?? 80),
   rows: Number(process.env.PTY_ROWS ?? 24),
+  auth: {
+    enabled: parseBoolean(process.env.AUTH_ENABLED, false),
+    password: process.env.AUTH_PASSWORD ?? '',
+    ttlDays: Number(process.env.AUTH_TTL_DAYS ?? 7),
+    tokenSecret: process.env.AUTH_TOKEN_SECRET ?? process.env.AUTH_PASSWORD ?? 'venus-vibe-deck-auth',
+  },
   voice: {
     useServerVoice: parseBoolean(process.env.VOICE_USE_SERVER, false),
     asrProvider: (process.env.VOICE_ASR_PROVIDER ?? 'cloud') as 'cloud' | 'local',

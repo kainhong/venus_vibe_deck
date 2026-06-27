@@ -55,6 +55,53 @@ textarea {
   background: var(--page);
 }
 
+.auth-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: var(--page);
+}
+
+.auth-panel {
+  width: min(100%, 380px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 18px 46px rgba(31, 35, 41, 0.12);
+}
+
+.auth-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-header h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.auth-header p,
+.auth-error {
+  margin: 0;
+  font-size: 13px;
+}
+
+.auth-header p {
+  color: var(--muted);
+}
+
+.auth-error {
+  color: var(--danger);
+}
+
 .status-bar {
   flex: 0 0 auto;
   display: flex;

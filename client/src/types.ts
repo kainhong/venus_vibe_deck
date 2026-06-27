@@ -12,6 +12,17 @@ export interface SessionInfo {
 
 export type HandMode = 'left' | 'right';
 
+export interface AuthStatus {
+  enabled: boolean;
+  authenticated: boolean;
+  expiresAt?: number;
+}
+
+export interface AuthLoginResponse {
+  token: string;
+  expiresAt: number;
+}
+
 export type ClientMessage =
   | { action: 'input'; sessionId: string; data: string }
   | { action: 'resize'; sessionId: string; cols: number; rows: number }

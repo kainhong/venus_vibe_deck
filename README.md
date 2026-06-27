@@ -106,6 +106,10 @@ Copy `.env.example` to `.env` and adjust it.
 | `PTY_COMMAND` | default command for new sessions | `bash` |
 | `PTY_ARGS` | default command arguments | empty |
 | `SCROLLBACK_BYTES` | reconnect scrollback buffer size | `51200` |
+| `AUTH_ENABLED` | require password authentication before using the app | `false` |
+| `AUTH_PASSWORD` | password used when authentication is enabled | empty |
+| `AUTH_TTL_DAYS` | login validity period in days | `7` |
+| `AUTH_TOKEN_SECRET` | optional signing secret for auth tokens | `AUTH_PASSWORD` |
 | `VOICE_USE_SERVER` | use server-side voice recognition | `false` |
 | `VOICE_ASR_PROVIDER` | `cloud` or `local` | `cloud` |
 | `VENUS_DIR_ROOTS` | directory browser allowlist | home + cwd |

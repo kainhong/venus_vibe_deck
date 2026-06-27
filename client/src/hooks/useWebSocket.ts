@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getAuthToken } from '../api/http';
 import type { ClientMessage, ServerMessage, SessionInfo } from '../types';
 
 /** 单进程同源:页面与 WebSocket 共用同一 host:port(server 同时托管静态页与 WS) */
 function buildWsUrl(): string {
   const proto = globalThis.location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${proto}//${location.host}`;
+  const url = new URL(`${proto}://${location.host}`);
+  const token = getAuthToken();
+  if (token) url.searchParams.set('auth', token);
+  return url.toString();
 }
 
 const SESSION_PARAM = 'session';

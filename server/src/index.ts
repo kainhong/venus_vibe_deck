@@ -7,6 +7,7 @@ import { ClientConnection } from './ws/handler.js';
 import { serveStatic } from './static.js';
 import { handleApi } from './http/router.js';
 import { createLogger } from './logger.js';
+import { isAuthenticatedRequest } from './auth.js';
 
 const manager = new SessionManager();
 const logger = createLogger('server');
@@ -20,7 +21,11 @@ const httpServer = createServer(async (req, res) => {
 });
 
 const wss = new WebSocketServer({ server: httpServer });
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+  if (!isAuthenticatedRequest(req)) {
+    ws.close(1008, 'authentication required');
+    return;
+  }
   new ClientConnection(ws, manager);
 });
 
@@ -29,6 +34,8 @@ httpServer.listen(config.port, config.host, () => {
     host: config.host,
     port: config.port,
     defaultCommand: config.defaultCommand,
+    authEnabled: config.auth.enabled,
+    authTtlDays: config.auth.ttlDays,
     voiceServerEnabled: config.voice.useServerVoice,
     sttMode: getSttMode(),
     sttProvider: config.voice.useServerVoice ? config.voice.asrProvider : 'browser',
@@ -36,6 +43,13 @@ httpServer.listen(config.port, config.host, () => {
     sttModel: config.voice.useServerVoice && config.voice.asrProvider === 'cloud' ? config.voice.asrModel : undefined,
     sttSampleRate: config.voice.useServerVoice ? config.voice.asrSampleRate : undefined,
   });
+  if (!config.auth.enabled) {
+    logger.warn('AUTHENTICATION DISABLED: anyone who can reach this server can use the terminal', {
+      env: 'AUTH_ENABLED=false',
+      host: config.host,
+      port: config.port,
+    });
+  }
 });
 
 function getSttMode(): 'browser' | 'server-local' | 'server-cloud' {

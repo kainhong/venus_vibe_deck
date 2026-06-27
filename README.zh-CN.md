@@ -106,6 +106,10 @@ npm run dev
 | `PTY_COMMAND` | 新建会话默认命令 | `bash` |
 | `PTY_ARGS` | 默认命令参数 | 空 |
 | `SCROLLBACK_BYTES` | 重连回放缓冲大小 | `51200` |
+| `AUTH_ENABLED` | 是否启用访问密码验证 | `false` |
+| `AUTH_PASSWORD` | 启用验证时使用的访问密码 | 空 |
+| `AUTH_TTL_DAYS` | 登录有效期，单位天 | `7` |
+| `AUTH_TOKEN_SECRET` | 认证 token 签名密钥，可选 | `AUTH_PASSWORD` |
 | `VOICE_USE_SERVER` | 是否使用服务端语音识别 | `false` |
 | `VOICE_ASR_PROVIDER` | `cloud` 或 `local` | `cloud` |
 | `VENUS_DIR_ROOTS` | 目录浏览白名单 | home + cwd |

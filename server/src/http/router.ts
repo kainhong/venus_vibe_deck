@@ -10,6 +10,7 @@ import type { SpeechTranscribeRequest } from '../speech/types.js';
 import type { SessionManager } from '../session/SessionManager.js';
 import { createLogger } from '../logger.js';
 import { getWebPushPublicKey, subscribePush, unsubscribePush } from '../push/pushService.js';
+import { authenticatePassword, getAuthStatus, isAuthenticatedRequest } from '../auth.js';
 import type webPush from 'web-push';
 
 const logger = createLogger('http');
@@ -39,6 +40,23 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
   const startedAt = Date.now();
 
   try {
+    if (pathname === '/api/auth/status') {
+      if (method !== 'GET') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      return respond(req, res, startedAt, 200, getAuthStatus(req));
+    }
+
+    if (pathname === '/api/auth/login') {
+      if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      const { password } = await readBody<{ password: string }>(req, 16 * 1024);
+      const result = authenticatePassword(password ?? '');
+      if (!result) return respond(req, res, startedAt, 401, { error: 'invalid password' });
+      return respond(req, res, startedAt, 200, result);
+    }
+
+    if (!isAuthenticatedRequest(req) && !isLocalNotification(pathname, req)) {
+      return respond(req, res, startedAt, 401, { error: 'authentication required' });
+    }
+
     if (pathname === '/api/config') {
       if (method === 'GET') return respond(req, res, startedAt, 200, await loadConfig());
       if (method === 'PUT') {
@@ -127,6 +145,10 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
     logger.warn('api request failed', { method, pathname, err: err as Error });
     return respond(req, res, startedAt, 400, { error: (err as Error).message });
   }
+}
+
+function isLocalNotification(pathname: string, req: IncomingMessage): boolean {
+  return (pathname === '/api/notification' || pathname === '/api/hooks/notification') && isLocalRequest(req);
 }
 
 function isLocalRequest(req: IncomingMessage): boolean {
