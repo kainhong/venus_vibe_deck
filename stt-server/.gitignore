@@ -1,2 +1,59 @@
-data
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 打包 / 分发产物
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# 虚拟环境(根 .gitignore 已忽略 stt-server/.venv/,此处冗余以自包含)
+.venv/
+venv/
+env/
+ENV/
+
+# 测试 / 静态检查缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# uv
+.uv-cache/
+
+# ASR 模型 / 权重(体积大,不入库;解压到 models/ 即可)
 models/
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+*.tar.gz
+
+# 运行时数据(临时/输出)
+data/
+
+# 环境变量 / 密钥
+.env
+.env.*
+!.env.example
+
+# 日志
+*.log
+logs/
+
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
