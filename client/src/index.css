@@ -1027,9 +1027,10 @@ textarea {
 }
 
 .settings-segmented button.active {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: 0 4px 12px rgba(31, 35, 41, 0.08);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 650;
+  box-shadow: 0 4px 12px rgba(47, 124, 246, 0.28);
 }
 
 .voice-command-summary {
@@ -1310,8 +1311,8 @@ textarea {
 }
 
 .immersive-hit-layer.listening {
-  background: radial-gradient(circle at var(--voice-x, 50%) var(--voice-y, 50%), rgba(229, 72, 77, 0.12) 0 72px, rgba(229, 72, 77, 0.045) 118px, transparent 220px);
-  animation: immersive-voice-wash 1.8s ease-in-out infinite;
+  background: radial-gradient(circle at var(--voice-x, 50%) var(--voice-y, 50%), rgba(28, 168, 92, 0.18) 0 135px, rgba(28, 168, 92, 0.085) 235px, transparent 430px);
+  animation: immersive-voice-wash 2.2s ease-in-out infinite;
 }
 
 .immersive-hit-layer.processing {
@@ -1320,28 +1321,30 @@ textarea {
 
 .immersive-voice-float {
   position: fixed;
-  transform: translate(-50%, -50%);
-  width: 64px;
-  height: 64px;
+  --voice-float-lift: 44px;
+  transform: translate(-50%, calc(-50% - var(--voice-float-lift)));
+  width: 78px;
+  height: 78px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
-  background: rgba(28, 31, 38, 0.78);
+  background: rgba(21, 29, 26, 0.82);
   display: grid;
   place-items: center;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(229, 72, 77, 0.22);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(28, 168, 92, 0.34), 0 0 54px rgba(28, 168, 92, 0.26);
   backdrop-filter: blur(16px);
+  isolation: isolate;
   pointer-events: none;
-  animation: immersive-voice-pop 0.18s ease-out, immersive-voice-breathe 1.15s ease-in-out infinite;
+  animation: immersive-voice-pop 0.18s ease-out, immersive-voice-breathe 1.45s ease-in-out infinite;
 }
 
 .immersive-voice-icon {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   filter: brightness(0) invert(1);
 }
 
 .immersive-hit-layer.listening .immersive-voice-icon {
-  filter: invert(40%) sepia(90%) saturate(1200%) hue-rotate(330deg) brightness(95%);
+  filter: invert(54%) sepia(81%) saturate(515%) hue-rotate(93deg) brightness(94%) contrast(89%);
 }
 
 .immersive-hit-layer.processing .immersive-voice-icon {
@@ -1352,24 +1355,34 @@ textarea {
   filter: invert(55%) sepia(80%) saturate(600%) hue-rotate(15deg) brightness(95%);
 }
 
-.immersive-voice-float::before {
+.immersive-voice-float::before,
+.immersive-voice-float::after {
   content: '';
   position: absolute;
-  inset: -9px;
+  inset: -18px;
   z-index: -1;
   border-radius: inherit;
-  background: rgba(229, 72, 77, 0.22);
-  opacity: 0.9;
-  animation: immersive-voice-ring 1.15s ease-out infinite;
+  background: rgba(28, 168, 92, 0.2);
+  opacity: 0;
+  animation: immersive-voice-ring 1.55s ease-out infinite;
+}
+
+.immersive-voice-float::after {
+  inset: -46px;
+  background: rgba(28, 168, 92, 0.14);
+  animation-delay: 0.42s;
 }
 
 .immersive-hit-layer.processing .immersive-voice-float {
+  background: rgba(22, 28, 38, 0.82);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(47, 124, 246, 0.22);
   animation: immersive-voice-pop 0.18s ease-out;
 }
 
-.immersive-hit-layer.processing .immersive-voice-float::before {
+.immersive-hit-layer.processing .immersive-voice-float::before,
+.immersive-hit-layer.processing .immersive-voice-float::after {
   background: rgba(47, 124, 246, 0.18);
+  opacity: 0.62;
   animation: none;
 }
 
@@ -1378,12 +1391,15 @@ textarea {
 }
 
 .immersive-hit-layer.pending .immersive-voice-float {
+  background: rgba(38, 30, 18, 0.82);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(245, 158, 11, 0.3);
   animation: immersive-voice-pop 0.18s ease-out;
 }
 
-.immersive-hit-layer.pending .immersive-voice-float::before {
+.immersive-hit-layer.pending .immersive-voice-float::before,
+.immersive-hit-layer.pending .immersive-voice-float::after {
   background: rgba(245, 158, 11, 0.18);
+  opacity: 0.62;
   animation: none;
 }
 
@@ -1441,22 +1457,24 @@ textarea {
 }
 
 @keyframes immersive-voice-pop {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from { opacity: 0; transform: translate(-50%, calc(-50% - var(--voice-float-lift))) scale(0.88); }
+  to { opacity: 1; transform: translate(-50%, calc(-50% - var(--voice-float-lift))) scale(1); }
 }
 
 @keyframes immersive-voice-breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.035); }
+  0%, 100% { transform: translate(-50%, calc(-50% - var(--voice-float-lift))) scale(1); }
+  50% { transform: translate(-50%, calc(-50% - var(--voice-float-lift))) scale(1.045); }
 }
 
 @keyframes immersive-voice-ring {
-  from { opacity: 0.72; transform: scale(0.82); }
-  to { opacity: 0; transform: scale(1.48); }
+  0% { opacity: 0; transform: scale(0.72); }
+  18% { opacity: 0.72; }
+  62% { opacity: 0.26; transform: scale(1.9); }
+  100% { opacity: 0; transform: scale(2.78); }
 }
 
 @keyframes immersive-voice-wash {
-  0%, 100% { opacity: 0.88; }
+  0%, 100% { opacity: 0.82; }
   50% { opacity: 1; }
 }
 
