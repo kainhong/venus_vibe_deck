@@ -63,6 +63,7 @@ bash / Claude Code / Codex / custom agent CLI
 <p>
   <img src="./docs/images/image-4.png" width="240" alt="New session panel with tool-neutral CLI selection">
   <img src="./docs/images/image-5.png" width="240" alt="Session history panel">
+  <img src="./docs/images/image-6.png" width="240" alt="Settings panel with hand preference and voice configuration summary">
 </p>
 
 - **Terminal HUD**: readable PTY output with a mobile coding control deck.
@@ -70,6 +71,7 @@ bash / Claude Code / Codex / custom agent CLI
 - **Immersive mode**: full-screen terminal with voice-first interaction.
 - **Tool-neutral sessions**: create sessions for Claude, Codex, OpenCode, or any custom CLI.
 - **Session history**: reconnect live sessions or resume past CLI + workspace workflows.
+- **Settings**: switch left/right hand operation and inspect voice command configuration.
 
 ## Quick Start
 

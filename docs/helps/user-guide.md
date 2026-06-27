@@ -57,11 +57,9 @@ If `VENUS_DATA_DIR` is not set, runtime data is stored at:
 
 Use `HOST=0.0.0.0` when accessing the app from another device on the LAN.
 
-## 3. Configure CLI Profiles
+## 3. Configure Profiles and Settings
 
-Open **More → Settings**.
-
-Each CLI profile contains:
+CLI profiles are maintained in `server/config/settings.json`. Each profile contains:
 
 | Field | Meaning | Example |
 |---|---|---|
@@ -87,7 +85,12 @@ Arguments:
 Resume argument:
 ```
 
-Settings are persisted by the server and shared across devices using the same server.
+Open **More → Settings** to adjust display preferences and inspect voice configuration.
+
+- **Display / operation habit**: choose right-hand or left-hand mode. Left-hand mode mirrors the bottom action row and puts Enter on the left.
+- **Voice**: shows whether server-side voice is enabled and lists configured voice command aliases.
+
+Runtime CLI and voice command changes are made in `server/config/settings.json`.
 
 ## 4. Create a Session
 

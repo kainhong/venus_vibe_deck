@@ -63,6 +63,7 @@ bash / Claude Code / Codex / 自定义 Agent CLI
 <p>
   <img src="./docs/images/image-4.png" width="240" alt="新建会话和工具中立 CLI 选择">
   <img src="./docs/images/image-5.png" width="240" alt="历史会话面板">
+  <img src="./docs/images/image-6.png" width="240" alt="设置面板，包含左右手操作习惯和语音配置摘要">
 </p>
 
 - **终端 HUD**：可读的服务端 PTY 输出，加上移动端 coding 控制面板。
@@ -70,6 +71,7 @@ bash / Claude Code / Codex / 自定义 Agent CLI
 - **沉浸模式**：终端全屏展示，语音优先交互。
 - **工具中立会话**：可为 Claude、Codex、OpenCode 或任意自定义 CLI 新建 session。
 - **历史会话**：连接在线会话，或继续过去的 CLI + workspace 工作流。
+- **设置面板**：切换左手/右手操作习惯，并查看语音命令配置摘要。
 
 ## 快速开始
 
