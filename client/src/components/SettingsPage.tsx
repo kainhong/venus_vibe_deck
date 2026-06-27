@@ -3,7 +3,10 @@ import type { HandMode } from '../types';
 
 interface SettingsPageProps {
   handMode: HandMode;
+  useBrowserSpeechApi: boolean;
+  serverVoiceEnabled: boolean;
   onHandModeChange: (mode: HandMode) => void;
+  onBrowserSpeechChange: (enabled: boolean) => void;
   onClose: () => void;
 }
 
@@ -11,7 +14,14 @@ interface SettingsPageProps {
  * 设置页 — 仅展示运行时配置摘要。
  * CLI 配置由 server/config/settings.json 维护,前端不再提供编辑入口。
  */
-export function SettingsPage({ handMode, onHandModeChange, onClose }: SettingsPageProps) {
+export function SettingsPage({
+  handMode,
+  useBrowserSpeechApi,
+  serverVoiceEnabled,
+  onHandModeChange,
+  onBrowserSpeechChange,
+  onClose,
+}: SettingsPageProps) {
   const { config } = useApp();
 
   return (
@@ -53,9 +63,24 @@ export function SettingsPage({ handMode, onHandModeChange, onClose }: SettingsPa
 
           <section className="settings-section">
             <h3>语音</h3>
+            <div className="settings-option-row">
+              <span className="settings-option-label">前端 Web API 识别</span>
+              <label className="settings-switch">
+                <input
+                  type="checkbox"
+                  checked={useBrowserSpeechApi}
+                  disabled={!serverVoiceEnabled}
+                  onChange={(e) => onBrowserSpeechChange(e.target.checked)}
+                />
+                <span>{useBrowserSpeechApi ? '开启' : '关闭'}</span>
+              </label>
+            </div>
             <p className="hint">
-              后端语音解析: {config?.voiceSettings?.useServerVoice ? '已开启' : '未开启'}。通过 .env 的 VOICE_USE_SERVER 控制。
+              当前 STT: {useBrowserSpeechApi ? '浏览器 Web Speech API' : '服务端 STT'}。服务端语音解析通过 .env 的 VOICE_USE_SERVER 控制。
             </p>
+            {!serverVoiceEnabled && (
+              <p className="hint">服务端 STT 未开启时将使用浏览器 Web Speech API。</p>
+            )}
             <div className="voice-command-summary" aria-label="语音指令别名">
               {(config?.voiceSettings?.commands ?? []).map((command) => (
                 <p className="voice-command-line" key={command.id}>

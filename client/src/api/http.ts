@@ -1,4 +1,4 @@
-import type { AuthLoginResponse, AuthStatus, ConfigDoc, DirListing, HistoryDoc, PrepareWorktreeRequest, PrepareWorktreeResponse, SpeechResult, SpeechTranscribeRequest } from '../types';
+import type { AuthLoginResponse, AuthStatus, ConfigDoc, DirListing, HistoryDoc, PrepareWorktreeRequest, PrepareWorktreeResponse, SpeechInterpretRequest, SpeechResult, SpeechTranscribeRequest } from '../types';
 
 /**
  * 前端 HTTP client —— 同源 fetch /api/*(server 单进程同源,与 WS 一致,无需 base URL)。
@@ -67,6 +67,8 @@ export const api = {
     sendJson<PrepareWorktreeResponse>('POST', '/api/worktree/prepare', req),
   transcribeSpeech: (req: SpeechTranscribeRequest) =>
     sendJson<SpeechResult>('POST', '/api/speech/transcribe', req),
+  interpretSpeech: (req: SpeechInterpretRequest) =>
+    sendJson<SpeechResult>('POST', '/api/speech/interpret', req),
   getPushPublicKey: () => getJson<{ publicKey: string }>('/api/push/public-key'),
   subscribePush: (subscription: PushSubscriptionJSON) =>
     sendJson<{ ok: boolean; count: number }>('POST', '/api/push/subscribe', subscription),

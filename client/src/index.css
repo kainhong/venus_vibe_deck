@@ -1051,6 +1051,29 @@ textarea {
   flex: 0 0 auto;
 }
 
+.settings-switch {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-switch input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.settings-switch:has(input:disabled) {
+  color: var(--subtle);
+  cursor: not-allowed;
+}
+
 .settings-segmented {
   display: inline-grid;
   grid-template-columns: repeat(2, minmax(84px, 1fr));

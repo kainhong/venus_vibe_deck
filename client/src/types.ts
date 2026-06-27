@@ -115,6 +115,11 @@ export interface SpeechTranscribeRequest {
   submitMode?: 'insert' | 'submit';
 }
 
+export interface SpeechInterpretRequest {
+  transcript: string;
+  submitMode?: 'insert' | 'submit';
+}
+
 export interface WorkspaceHistoryEntry {
   path: string;
   lastUsedAt: number;

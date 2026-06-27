@@ -4,9 +4,9 @@ import { addWorkspace, loadHistory } from '../storage/workspaceHistoryStore.js';
 import { listDir } from './listDir.js';
 import { prepareWorktree, type PrepareWorktreeRequest } from './worktree.js';
 import { PathForbiddenError } from '../util/pathGuard.js';
-import { transcribeSpeech } from '../speech/speechService.js';
+import { interpretSpeech, transcribeSpeech } from '../speech/speechService.js';
 import { synthesize } from '../speech/tts.js';
-import type { SpeechTranscribeRequest } from '../speech/types.js';
+import type { SpeechInterpretRequest, SpeechTranscribeRequest } from '../speech/types.js';
 import type { SessionManager } from '../session/SessionManager.js';
 import { createLogger } from '../logger.js';
 import { getWebPushPublicKey, subscribePush, unsubscribePush } from '../push/pushService.js';
@@ -90,6 +90,12 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
       if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
       logger.info('speech transcription requested', { remoteAddress: req.socket.remoteAddress });
       return respond(req, res, startedAt, 200, await transcribeSpeech(await readBody<SpeechTranscribeRequest>(req, 6 * 1024 * 1024)));
+    }
+
+    if (pathname === '/api/speech/interpret') {
+      if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      logger.info('speech interpretation requested', { remoteAddress: req.socket.remoteAddress });
+      return respond(req, res, startedAt, 200, await interpretSpeech(await readBody<SpeechInterpretRequest>(req, 64 * 1024)));
     }
 
     if (pathname === '/api/push/public-key') {

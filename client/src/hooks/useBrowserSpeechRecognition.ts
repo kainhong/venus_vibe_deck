@@ -294,20 +294,40 @@ export function useBrowserSpeechRecognition({
       const suppressed = suppressResultRef.current;
       suppressResultRef.current = false;
       cleanup();
-      setState('idle');
-      if (suppressed) return;
-      if (!message) return;
-      const commandResult = matchVoiceCommand(message, commandsRef.current);
-      if (commandResult) {
-        onResultRef.current(commandResult);
+      if (suppressed) {
+        setState('idle');
         return;
       }
-      onResultRef.current({
-        type: 'text',
-        message: submitModeRef.current === 'submit' ? `${message}\r` : message,
-        confidence: confidenceRef.current,
-        provider: 'browser-native',
-        durationMs,
+      if (!message) {
+        setState('idle');
+        return;
+      }
+      setState('processing');
+      void api.interpretSpeech({
+        transcript: message,
+        submitMode: submitModeRef.current,
+      }).then((result) => {
+        setState('idle');
+        onResultRef.current({
+          ...result,
+          confidence: confidenceRef.current,
+          provider: result.provider ?? 'browser-native-server',
+          durationMs: result.durationMs ?? durationMs,
+        });
+      }).catch(() => {
+        setState('idle');
+        const commandResult = matchVoiceCommand(message, commandsRef.current);
+        if (commandResult) {
+          onResultRef.current(commandResult);
+          return;
+        }
+        onResultRef.current({
+          type: 'text',
+          message: submitModeRef.current === 'submit' ? `${message}\r` : message,
+          confidence: confidenceRef.current,
+          provider: 'browser-native-fallback',
+          durationMs,
+        });
       });
     };
 

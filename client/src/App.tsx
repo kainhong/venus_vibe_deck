@@ -18,6 +18,7 @@ const IMMERSIVE_LONG_PRESS_MS = 400;
 const SESSION_HISTORY_STORAGE_KEY = 'venus-vibe-deck.session-history.v1';
 const SESSION_HISTORY_LIMIT = 10;
 const DISPLAY_HAND_STORAGE_KEY = 'venus-vibe-deck.display-hand.v1';
+const BROWSER_SPEECH_STORAGE_KEY = 'venus-vibe-deck.browser-speech.v1';
 
 type View = 'terminal' | 'settings' | 'newSession' | 'history' | 'about';
 type SessionAlert = { at: number; source?: string; message?: string };
@@ -39,6 +40,7 @@ export default function App() {
   const pendingHistoryRef = useRef<SessionHistoryEntry | null>(null);
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
   const [handMode, setHandModeState] = useState<HandMode>(() => readHandMode());
+  const [browserSpeechPreference, setBrowserSpeechPreference] = useState<boolean | null>(() => readBrowserSpeechPreference());
   const [immersive, setImmersive] = useState(false);
   const [immersivePending, setImmersivePending] = useState(false);
   const immersivePendingRef = useRef(false);
@@ -81,7 +83,7 @@ export default function App() {
   const speech = useBrowserSpeechRecognition({
     lang: 'zh-CN',
     submitMode: 'insert',
-    useServerVoice: config?.voiceSettings?.useServerVoice ?? false,
+    useServerVoice: (config?.voiceSettings?.useServerVoice ?? false) && !getUseBrowserSpeechApi(config?.voiceSettings?.useServerVoice ?? false, browserSpeechPreference),
     commands: config?.voiceSettings?.commands ?? [],
     onResult: handleSpeechResult,
     onError: (message) => alert(message),
@@ -166,6 +168,10 @@ export default function App() {
 
   const handleHandModeChange = useCallback((mode: HandMode) => {
     setHandModeState(persistHandMode(mode));
+  }, []);
+
+  const handleBrowserSpeechChange = useCallback((enabled: boolean) => {
+    setBrowserSpeechPreference(persistBrowserSpeechPreference(enabled));
   }, []);
 
   const enterImmersive = useCallback(() => {
@@ -440,7 +446,10 @@ export default function App() {
       {view === 'settings' && (
         <SettingsPage
           handMode={handMode}
+          useBrowserSpeechApi={getUseBrowserSpeechApi(config?.voiceSettings?.useServerVoice ?? false, browserSpeechPreference)}
+          serverVoiceEnabled={config?.voiceSettings?.useServerVoice ?? false}
           onHandModeChange={handleHandModeChange}
+          onBrowserSpeechChange={handleBrowserSpeechChange}
           onClose={() => setView('terminal')}
         />
       )}
@@ -541,4 +550,28 @@ function persistHandMode(mode: HandMode): HandMode {
     // 显示偏好持久化失败时只影响下次进入的默认值。
   }
   return mode;
+}
+
+function getUseBrowserSpeechApi(serverVoiceEnabled: boolean, preference: boolean | null): boolean {
+  return preference ?? !serverVoiceEnabled;
+}
+
+function readBrowserSpeechPreference(): boolean | null {
+  try {
+    const value = localStorage.getItem(BROWSER_SPEECH_STORAGE_KEY);
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function persistBrowserSpeechPreference(enabled: boolean): boolean {
+  try {
+    localStorage.setItem(BROWSER_SPEECH_STORAGE_KEY, String(enabled));
+  } catch {
+    // 语音识别偏好持久化失败时只影响下次进入的默认值。
+  }
+  return enabled;
 }

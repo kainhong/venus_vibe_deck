@@ -21,3 +21,8 @@ export interface SpeechTranscribeRequest {
   language?: string;
   submitMode?: 'insert' | 'submit';
 }
+
+export interface SpeechInterpretRequest {
+  transcript: string;
+  submitMode?: 'insert' | 'submit';
+}
