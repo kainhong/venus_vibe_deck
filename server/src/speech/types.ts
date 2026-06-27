@@ -1,3 +1,10 @@
+export interface SpeechRecording {
+  id: string;
+  url: string;
+  mimeType: string;
+  bytes: number;
+}
+
 export type SpeechResult =
   | {
       type: 'text';
@@ -5,6 +12,7 @@ export type SpeechResult =
       confidence?: number;
       provider?: string;
       durationMs?: number;
+      recording?: SpeechRecording;
     }
   | {
       type: 'command';
@@ -13,6 +21,7 @@ export type SpeechResult =
       confidence?: number;
       provider?: string;
       durationMs?: number;
+      recording?: SpeechRecording;
     };
 
 export interface SpeechTranscribeRequest {

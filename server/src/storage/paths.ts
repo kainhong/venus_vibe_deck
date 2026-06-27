@@ -16,6 +16,7 @@ export const CONFIG_FILE = join(CONFIG_DIR, 'settings.json');
 export const VOICE_REFINE_PROMPT_FILE = join(CONFIG_DIR, 'voice-refine-prompt.md');
 export const HISTORY_FILE = join(DATA_DIR, 'history.json');
 export const PUSH_SUBSCRIPTIONS_FILE = join(DATA_DIR, 'push-subscriptions.json');
+export const VOICE_RECORDINGS_DIR = join(DATA_DIR, 'voice-recordings');
 
 /**
  * list-dir 浏览白名单根(逗号分隔)。

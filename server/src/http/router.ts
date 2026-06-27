@@ -5,6 +5,7 @@ import { listDir } from './listDir.js';
 import { prepareWorktree, type PrepareWorktreeRequest } from './worktree.js';
 import { PathForbiddenError } from '../util/pathGuard.js';
 import { interpretSpeech, transcribeSpeech } from '../speech/speechService.js';
+import { serveSpeechRecording } from '../speech/recordings.js';
 import { synthesize } from '../speech/tts.js';
 import type { SpeechInterpretRequest, SpeechTranscribeRequest } from '../speech/types.js';
 import type { SessionManager } from '../session/SessionManager.js';
@@ -84,6 +85,13 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
     if (pathname === '/api/worktree/prepare') {
       if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
       return respond(req, res, startedAt, 200, await prepareWorktree(await readBody<PrepareWorktreeRequest>(req)));
+    }
+
+    if (pathname.startsWith('/api/speech/recordings/')) {
+      if (method !== 'GET') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      const id = decodeURIComponent(pathname.slice('/api/speech/recordings/'.length));
+      logger.info('speech recording requested', { id, remoteAddress: req.socket.remoteAddress });
+      return await serveSpeechRecording(id, res);
     }
 
     if (pathname === '/api/speech/transcribe') {

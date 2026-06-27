@@ -5,6 +5,7 @@ import { TerminalView, type TerminalWriter } from './components/Terminal';
 import { ControlPanel } from './components/ControlPanel';
 import { StatusBar } from './components/StatusBar';
 import { SettingsPage } from './components/SettingsPage';
+import { SpeechTestPanel } from './components/SpeechTestPanel';
 import { NewSessionPanel } from './components/NewSessionPanel';
 import { SessionHistoryPanel, type SessionHistoryEntry } from './components/SessionHistoryPanel';
 import { AboutPanel } from './components/AboutPanel';
@@ -20,7 +21,7 @@ const SESSION_HISTORY_LIMIT = 10;
 const DISPLAY_HAND_STORAGE_KEY = 'venus-vibe-deck.display-hand.v1';
 const BROWSER_SPEECH_STORAGE_KEY = 'venus-vibe-deck.browser-speech.v1';
 
-type View = 'terminal' | 'settings' | 'newSession' | 'history' | 'about';
+type View = 'terminal' | 'settings' | 'speechTest' | 'newSession' | 'history' | 'about';
 type SessionAlert = { at: number; source?: string; message?: string };
 
 export default function App() {
@@ -341,6 +342,7 @@ export default function App() {
         onNew={() => setView('newSession')}
         onHistory={() => setView('history')}
         onSettings={() => setView('settings')}
+        onSpeechTest={() => setView('speechTest')}
         onAbout={() => setView('about')}
         onCloseCurrent={closeCurrent}
         bellActive={bellActive}
@@ -450,6 +452,13 @@ export default function App() {
           serverVoiceEnabled={config?.voiceSettings?.useServerVoice ?? false}
           onHandModeChange={handleHandModeChange}
           onBrowserSpeechChange={handleBrowserSpeechChange}
+          onClose={() => setView('terminal')}
+        />
+      )}
+      {view === 'speechTest' && (
+        <SpeechTestPanel
+          useBrowserSpeechApi={config ? getUseBrowserSpeechApi(config.voiceSettings?.useServerVoice ?? false, browserSpeechPreference) : null}
+          serverVoiceEnabled={config?.voiceSettings?.useServerVoice ?? null}
           onClose={() => setView('terminal')}
         />
       )}

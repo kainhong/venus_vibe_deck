@@ -2,6 +2,7 @@ import { config } from '../config.js';
 import { refineTranscriptWithLlm } from './llmRefine.js';
 import { transcribeWithRealtimeAsr } from './realtimeAsr.js';
 import { transcribeWithLocalAsr } from './localAsr.js';
+import { saveSpeechRecording } from './recordings.js';
 import type { SpeechInterpretRequest, SpeechResult, SpeechTranscribeRequest } from './types.js';
 import { createLogger } from '../logger.js';
 
@@ -28,8 +29,10 @@ export async function transcribeSpeech(req: SpeechTranscribeRequest): Promise<Sp
   if (audio.length > MAX_AUDIO_BYTES) throw new Error('audio too large');
 
   const startedAt = Date.now();
+  const recording = await saveSpeechRecording(audio, sampleRate);
   logger.info('speech transcription started', {
     audioBytes: audio.length,
+    recordingId: recording.id,
     sampleRate,
     language: req.language || 'zh',
     submitMode: req.submitMode ?? 'insert',
@@ -45,11 +48,13 @@ export async function transcribeSpeech(req: SpeechTranscribeRequest): Promise<Sp
   const withMeta = {
     ...applySubmitMode(result, req.submitMode ?? 'insert'),
     durationMs: Date.now() - startedAt,
+    recording,
   };
   logger.info('speech transcription completed', {
     resultType: withMeta.type,
     command: withMeta.type === 'command' ? withMeta.command : undefined,
     durationMs: withMeta.durationMs,
+    recordingId: recording.id,
   });
   return withMeta;
 }

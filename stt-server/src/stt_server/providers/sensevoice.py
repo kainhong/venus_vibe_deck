@@ -1,4 +1,5 @@
 import numpy as np
+import re
 from funasr import AutoModel
 
 from .base import STTProvider
@@ -14,6 +15,7 @@ class SenseVoiceProvider(STTProvider):
             model=MODEL_ID,
             trust_remote_code=True,
             device=DEVICE,
+            disable_update=True,
         )
 
     async def transcribe(self, audio: bytes, sample_rate: int, language: str) -> str:
@@ -29,4 +31,8 @@ class SenseVoiceProvider(STTProvider):
         if not result or not result[0]:
             return ""
         text = result[0].get("text", "")
-        return text.strip()
+        return clean_sensevoice_text(text)
+
+
+def clean_sensevoice_text(text: str) -> str:
+    return re.sub(r"<\|[^|]+?\|>", "", text).strip()

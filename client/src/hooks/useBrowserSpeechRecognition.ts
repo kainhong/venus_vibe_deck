@@ -59,6 +59,7 @@ export interface UseBrowserSpeechRecognitionOptions {
   lang?: string;
   submitMode?: 'insert' | 'submit';
   useServerVoice?: boolean;
+  continuous?: boolean;
   commands?: VoiceCommandConfig[];
   onResult: (result: SpeechResult) => void;
   onError?: (message: string) => void;
@@ -79,6 +80,7 @@ export function useBrowserSpeechRecognition({
   lang = 'zh-CN',
   submitMode = 'insert',
   useServerVoice = false,
+  continuous = false,
   commands = [],
   onResult,
   onError,
@@ -100,6 +102,7 @@ export function useBrowserSpeechRecognition({
   const onErrorRef = useRef(onError);
   const submitModeRef = useRef(submitMode);
   const useServerVoiceRef = useRef(useServerVoice);
+  const continuousRef = useRef(continuous);
   const commandsRef = useRef(commands);
   const [state, setState] = useState<SpeechState>(() => {
     if (typeof window === 'undefined') return 'unsupported';
@@ -112,6 +115,7 @@ export function useBrowserSpeechRecognition({
   onErrorRef.current = onError;
   submitModeRef.current = submitMode;
   useServerVoiceRef.current = useServerVoice;
+  continuousRef.current = continuous;
   commandsRef.current = commands;
 
   const cleanup = useCallback(() => {
@@ -257,7 +261,7 @@ export function useBrowserSpeechRecognition({
 
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = lang;
-    recognition.continuous = false;
+    recognition.continuous = continuousRef.current;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 

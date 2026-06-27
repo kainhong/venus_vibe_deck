@@ -10,5 +10,5 @@ fi
 echo "安装依赖..."
 uv pip install -e .
 
-echo "启动 STT 服务 (端口: ${STT_PORT:-8002})..."
+echo "启动 STT 服务 (端口: ${STT_PORT:-7000})..."
 .venv/bin/uvicorn stt_server.main:app --host "${STT_HOST:-127.0.0.1}" --port "${STT_PORT:-7000}"
