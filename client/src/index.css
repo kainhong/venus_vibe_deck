@@ -1159,10 +1159,49 @@ textarea {
   word-break: break-word;
 }
 
+.speech-test-compare {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.speech-test-text-block {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.speech-test-text-block > span {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font-size: 12px;
+}
+
+.speech-test-text-block pre {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .speech-test-content {
   flex: 0 1 auto;
-  min-height: 180px;
-  max-height: min(40dvh, 340px);
+  min-height: 220px;
+  max-height: min(44dvh, 380px);
   display: flex;
   overflow: hidden;
 }

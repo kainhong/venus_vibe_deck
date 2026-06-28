@@ -11,6 +11,8 @@ export type SpeechResult =
       message: string;
       confidence?: number;
       provider?: string;
+      rawTranscript?: string;
+      refineProvider?: string;
       durationMs?: number;
       recording?: SpeechRecording;
     }
@@ -20,6 +22,8 @@ export type SpeechResult =
       command: string;
       confidence?: number;
       provider?: string;
+      rawTranscript?: string;
+      refineProvider?: string;
       durationMs?: number;
       recording?: SpeechRecording;
     };

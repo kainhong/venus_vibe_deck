@@ -17,6 +17,14 @@ function applySubmitMode(result: SpeechResult, submitMode: 'insert' | 'submit'):
   };
 }
 
+function withRefineMeta(result: SpeechResult, rawTranscript: string): SpeechResult {
+  return {
+    ...result,
+    rawTranscript,
+    refineProvider: result.provider,
+  };
+}
+
 export async function transcribeSpeech(req: SpeechTranscribeRequest): Promise<SpeechResult> {
   if (!req.audio) throw new Error('audio required');
   const sampleRate = Number(req.sampleRate);
@@ -44,7 +52,7 @@ export async function transcribeSpeech(req: SpeechTranscribeRequest): Promise<Sp
     transcriptLength: transcript.length,
     elapsedMs: Date.now() - startedAt,
   });
-  const result = await refineTranscriptWithLlm(transcript);
+  const result = withRefineMeta(await refineTranscriptWithLlm(transcript), transcript);
   const withMeta = {
     ...applySubmitMode(result, req.submitMode ?? 'insert'),
     durationMs: Date.now() - startedAt,
@@ -67,7 +75,7 @@ export async function interpretSpeech(req: SpeechInterpretRequest): Promise<Spee
     transcriptLength: transcript.length,
     submitMode: req.submitMode ?? 'insert',
   });
-  const result = await refineTranscriptWithLlm(transcript);
+  const result = withRefineMeta(await refineTranscriptWithLlm(transcript), transcript);
   const withMeta = {
     ...applySubmitMode(result, req.submitMode ?? 'insert'),
     durationMs: Date.now() - startedAt,

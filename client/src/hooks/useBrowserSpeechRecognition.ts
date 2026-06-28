@@ -322,7 +322,11 @@ export function useBrowserSpeechRecognition({
         setState('idle');
         const commandResult = matchVoiceCommand(message, commandsRef.current);
         if (commandResult) {
-          onResultRef.current(commandResult);
+          onResultRef.current({
+            ...commandResult,
+            rawTranscript: message,
+            refineProvider: commandResult.provider,
+          });
           return;
         }
         onResultRef.current({
@@ -330,6 +334,8 @@ export function useBrowserSpeechRecognition({
           message: submitModeRef.current === 'submit' ? `${message}\r` : message,
           confidence: confidenceRef.current,
           provider: 'browser-native-fallback',
+          rawTranscript: message,
+          refineProvider: 'browser-native-fallback',
           durationMs,
         });
       });

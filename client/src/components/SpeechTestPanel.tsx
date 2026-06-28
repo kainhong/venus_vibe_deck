@@ -7,15 +7,16 @@ import type { SpeechResult } from '../types';
 interface SpeechTestPanelProps {
   useBrowserSpeechApi: boolean | null;
   serverVoiceEnabled: boolean | null;
+  asrProvider: 'cloud' | 'local' | null;
   onClose: () => void;
 }
 
-export function SpeechTestPanel({ useBrowserSpeechApi, serverVoiceEnabled, onClose }: SpeechTestPanelProps) {
+export function SpeechTestPanel({ useBrowserSpeechApi, serverVoiceEnabled, asrProvider, onClose }: SpeechTestPanelProps) {
   const { config } = useApp();
   const [result, setResult] = useState<SpeechResult | null>(null);
   const [error, setError] = useState('');
   const configReady = typeof serverVoiceEnabled === 'boolean' && typeof useBrowserSpeechApi === 'boolean';
-  const sttLabel = !configReady ? '配置加载中' : useBrowserSpeechApi ? '浏览器 Web Speech API' : '服务端 STT';
+  const sttLabel = getSttLabel(configReady, useBrowserSpeechApi, asrProvider);
   const speechTest = useBrowserSpeechRecognition({
     lang: 'zh-CN',
     submitMode: 'insert',
@@ -53,7 +54,7 @@ export function SpeechTestPanel({ useBrowserSpeechApi, serverVoiceEnabled, onClo
             )}
             <div className="speech-test-content">
               {result ? (
-                <pre className="speech-test-transcript">{result.message}</pre>
+                <ResultText result={result} />
               ) : (
                 <div className="speech-test-empty">
                   <strong>{speechTest.listening ? '正在收音' : speechTest.state === 'processing' ? '正在识别' : '等待测试'}</strong>
@@ -98,10 +99,46 @@ function getStatusText(state: string, listening: boolean, configReady: boolean, 
   return '点击开始后说一段语音。';
 }
 
+function getSttLabel(configReady: boolean, useBrowserSpeechApi: boolean | null, asrProvider: 'cloud' | 'local' | null): string {
+  if (!configReady) return '配置加载中';
+  if (useBrowserSpeechApi) return '浏览器 Web Speech API';
+  if (asrProvider === 'local') return '服务端 STT · 本地';
+  if (asrProvider === 'cloud') return '服务端 STT · 云端';
+  return '服务端 STT';
+}
+
+function ResultText({ result }: { result: SpeechResult }) {
+  const rawTranscript = result.rawTranscript?.trim();
+  const finalText = result.message.trim();
+  if (!rawTranscript) {
+    return <pre className="speech-test-transcript">{finalText}</pre>;
+  }
+  return (
+    <div className="speech-test-compare">
+      <div className="speech-test-text-block">
+        <span>原始识别</span>
+        <pre>{rawTranscript}</pre>
+      </div>
+      <div className="speech-test-text-block">
+        <span>{getRefineLabel(result.refineProvider)}</span>
+        <pre>{finalText}</pre>
+      </div>
+    </div>
+  );
+}
+
+function getRefineLabel(provider: string | undefined): string {
+  if (provider === 'server-llm') return 'LLM 处理后';
+  if (provider === 'server-regex' || provider === 'browser-native-regex') return '规则识别后';
+  if (provider?.startsWith('fallback') || provider === 'server-asr' || provider === 'browser-native-fallback') return '规则处理后';
+  return '处理后';
+}
+
 function formatMeta(result: SpeechResult): string {
   const parts = [
     result.type === 'command' ? `指令:${result.command}` : '文本',
     result.provider,
+    result.refineProvider === 'server-llm' ? 'LLM' : result.refineProvider ? '规则' : undefined,
     typeof result.durationMs === 'number' ? `${result.durationMs}ms` : undefined,
     typeof result.confidence === 'number' ? `置信度 ${result.confidence.toFixed(2)}` : undefined,
   ].filter(Boolean);

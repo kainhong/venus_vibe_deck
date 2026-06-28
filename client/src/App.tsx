@@ -459,6 +459,7 @@ export default function App() {
         <SpeechTestPanel
           useBrowserSpeechApi={config ? getUseBrowserSpeechApi(config.voiceSettings?.useServerVoice ?? false, browserSpeechPreference) : null}
           serverVoiceEnabled={config?.voiceSettings?.useServerVoice ?? null}
+          asrProvider={config?.voiceSettings?.asrProvider ?? null}
           onClose={() => setView('terminal')}
         />
       )}

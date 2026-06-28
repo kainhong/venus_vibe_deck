@@ -15,6 +15,7 @@ export interface ConfigDoc {
   cliConfigs: CliConfig[];
   voiceSettings?: {
     useServerVoice: boolean;
+    asrProvider: 'cloud' | 'local';
     commands: VoiceCommandConfig[];
   };
 }
@@ -39,6 +40,7 @@ function normalize(doc: ConfigDoc): ConfigDoc {
   });
   if (doc.voiceSettings) {
     doc.voiceSettings.useServerVoice = config.voice.useServerVoice;
+    doc.voiceSettings.asrProvider = config.voice.asrProvider;
   }
   return doc;
 }
