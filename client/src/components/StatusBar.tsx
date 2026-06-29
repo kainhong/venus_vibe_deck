@@ -56,7 +56,16 @@ export function StatusBar({
 
   return (
     <header className="status-bar">
-      <img className={`status-link ${currentSessionId ? 'on' : 'off'}${bellActive ? ' bell' : ''}`} src={currentSessionId ? linkIcon : linkBrokenIcon} alt="" aria-hidden />
+      <button
+        type="button"
+        className={`status-link-btn ${currentSessionId ? 'on' : 'off'}${bellActive ? ' bell' : ''}`}
+        onClick={onCloseCurrent}
+        disabled={!currentSessionId}
+        aria-label={currentSessionId ? '关闭当前会话' : '未连接会话'}
+        title={currentSessionId ? '关闭当前会话' : '未连接会话'}
+      >
+        <img className="status-link" src={currentSessionId ? linkIcon : linkBrokenIcon} alt="" aria-hidden />
+      </button>
 
       <select
         className="session-select"
@@ -77,9 +86,6 @@ export function StatusBar({
       <div className="header-actions" aria-label="会话操作">
         <button type="button" className="header-btn primary" onClick={onNew} aria-label="新建会话" disabled={!connected}>
           +
-        </button>
-        <button type="button" className="header-btn danger" onClick={onCloseCurrent} aria-label="关闭当前会话" disabled={!currentSessionId}>
-          ×
         </button>
         <button type="button" className="header-btn" onClick={onHistory} aria-label="历史会话">
           ↺

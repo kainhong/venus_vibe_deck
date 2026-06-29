@@ -113,17 +113,38 @@ textarea {
   border-bottom: 1px solid var(--line);
 }
 
-.status-link {
-  width: 16px;
-  height: 16px;
+.status-link-btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
 }
 
-.status-link.off {
+.status-link-btn:disabled {
+  cursor: default;
+}
+
+.status-link-btn.on:active {
+  background: rgba(31, 35, 40, 0.08);
+}
+
+.status-link {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.status-link-btn.off .status-link {
   opacity: 0.45;
 }
 
-.status-link.bell {
+.status-link-btn.bell .status-link {
   animation: status-bell-pulse 1s ease-in-out 3;
 }
 
