@@ -185,6 +185,19 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
               setLastBellSource(msg.source);
             }
             break;
+          case 'cli_session_end':
+            setLastNotification({
+              sessionId: msg.sessionId,
+              at: msg.at,
+              source: msg.source,
+              message: msg.message,
+            });
+            if (!msg.sessionId || msg.sessionId === currentRef.current) {
+              setLastBellAt(msg.at);
+              setLastBellMessage(msg.message);
+              setLastBellSource(msg.source);
+            }
+            break;
           case 'session_list':
             sessionsRef.current = msg.sessions;
             setSessions(msg.sessions);

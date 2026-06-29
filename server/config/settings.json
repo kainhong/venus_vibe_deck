@@ -1,4 +1,57 @@
 {
+  "runtime": {
+    "server": {
+      "host": "0.0.0.0",
+      "port": 8001,
+      "logLevel": "info"
+    },
+    "storage": {
+      "dataDir": "~/.venus-vibe-deck",
+      "dirRoots": [
+        "~"
+      ]
+    },
+    "terminal": {
+      "defaultCommand": "bash",
+      "defaultArgs": [],
+      "cols": 80,
+      "rows": 24,
+      "scrollbackBytes": 51200
+    },
+    "auth": {
+      "enabled": true,
+      "ttlDays": 7
+    },
+    "voice": {
+      "useServerVoice": false,
+      "asrProvider": "cloud",
+      "localAsrUrl": "http://127.0.0.1:7000",
+      "asrModel": "qwen3-asr-flash-realtime",
+      "asrSampleRate": 16000,
+      "asrChunkBytes": 3200,
+      "asrChunkIntervalMs": 40,
+      "asrTimeoutMs": 30000,
+      "llmModel": "qwen-plus",
+      "llmTimeoutMs": 30000,
+      "ttsEnabled": true,
+      "ttsProvider": "edge",
+      "ttsBaseUrl": "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+      "ttsModel": "cosyvoice-v3.5-plus",
+      "ttsVoice": "zh-CN-XiaoxiaoNeural",
+      "ttsFormat": "mp3",
+      "ttsSampleRate": 24000,
+      "ttsRate": "+0%",
+      "ttsVolume": "+0%",
+      "ttsPitch": "+0Hz"
+    },
+    "webPush": {
+      "publicKey": "",
+      "subject": "mailto:you@example.com"
+    },
+    "hooks": {
+      "summaryMaxChars": 240
+    }
+  },
   "cliConfigs": [
     {
       "id": "claude-default",

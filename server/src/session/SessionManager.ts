@@ -7,7 +7,8 @@ const logger = createLogger('session-manager');
 
 export type SessionManagerEvent =
   | { type: 'session_destroyed'; sessionId: string; sessions: SessionInfo[] }
-  | { type: 'notification'; sessionId?: string; at: number; source?: string; message?: string };
+  | { type: 'notification'; sessionId?: string; at: number; source?: string; message?: string }
+  | { type: 'cli_session_end'; sessionId?: string; at: number; source?: string; message?: string };
 
 /**
  * 会话管理器:维护 SessionID → PtySession 映射。
@@ -93,6 +94,29 @@ export class SessionManager {
       sessionId: event.sessionId,
       at: payload.at,
     });
+  }
+
+  handleCliHook(event: { event?: string; sessionId?: string; source?: string; message?: string }): void {
+    if (event.event === 'session_end') {
+      const payload = {
+        type: 'cli_session_end' as const,
+        at: Date.now(),
+        sessionId: event.sessionId,
+        source: event.source,
+        message: event.message,
+      };
+      logger.info('cli session end broadcast', payload);
+      this.emit(payload);
+      void sendPushNotification({
+        title: 'Vibe Deck',
+        body: event.message ?? 'CLI session ended',
+        source: event.source,
+        sessionId: event.sessionId,
+        at: payload.at,
+      });
+      return;
+    }
+    this.notify({ sessionId: event.sessionId, source: event.source, message: event.message });
   }
 
   private emit(event: SessionManagerEvent): void {

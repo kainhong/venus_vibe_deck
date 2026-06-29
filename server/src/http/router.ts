@@ -12,6 +12,7 @@ import type { SessionManager } from '../session/SessionManager.js';
 import { createLogger } from '../logger.js';
 import { getWebPushPublicKey, subscribePush, unsubscribePush } from '../push/pushService.js';
 import { authenticatePassword, getAuthStatus, isAuthenticatedRequest } from '../auth.js';
+import { summarizeHookMessage } from '../hooks/hookSummary.js';
 import type webPush from 'web-push';
 
 const logger = createLogger('http');
@@ -20,6 +21,16 @@ interface NotificationRequest {
   sessionId?: string;
   source?: string;
   message?: string;
+}
+
+interface CliHookRequest {
+  cli?: string;
+  event?: string;
+  sessionId?: string;
+  source?: string;
+  message?: string;
+  cwd?: string;
+  raw?: unknown;
 }
 
 /**
@@ -137,6 +148,29 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
       return respond(req, res, startedAt, 200, { ok: true });
     }
 
+    if (pathname === '/api/hooks/cli-event') {
+      if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
+      if (!isLocalRequest(req)) {
+        logger.warn('cli hook rejected: non-local request', { remoteAddress: req.socket.remoteAddress });
+        return respond(req, res, startedAt, 403, { error: 'local requests only' });
+      }
+      const body = await readBody<CliHookRequest>(req, 256 * 1024);
+      const event = {
+        event: normalizeHookEvent(body.event),
+        sessionId: readOptionalString(body.sessionId),
+        source: readOptionalString(body.source) ?? readOptionalString(body.cli),
+        message: await summarizeHookMessage(readOptionalString(body.message)),
+      };
+      logger.info('cli hook received', {
+        ...event,
+        cli: readOptionalString(body.cli),
+        cwd: readOptionalString(body.cwd),
+        remoteAddress: req.socket.remoteAddress,
+      });
+      manager.handleCliHook(event);
+      return respond(req, res, startedAt, 200, { ok: true });
+    }
+
     if (pathname === '/api/tts') {
       if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
       const { text } = await readBody<{ text: string }>(req, 64 * 1024);
@@ -162,7 +196,21 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
 }
 
 function isLocalNotification(pathname: string, req: IncomingMessage): boolean {
-  return (pathname === '/api/notification' || pathname === '/api/hooks/notification') && isLocalRequest(req);
+  return (
+    pathname === '/api/notification' ||
+    pathname === '/api/hooks/notification' ||
+    pathname === '/api/hooks/cli-event'
+  ) && isLocalRequest(req);
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeHookEvent(value: unknown): string {
+  const event = readOptionalString(value)?.toLowerCase().replace(/[-_\s]/g, '');
+  if (event === 'sessionend') return 'session_end';
+  return 'notify';
 }
 
 function isLocalRequest(req: IncomingMessage): boolean {

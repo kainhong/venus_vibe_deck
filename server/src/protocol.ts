@@ -65,6 +65,7 @@ export type ClientMessage =
 export type ServerMessage =
   | { type: 'terminal_out'; sessionId: string; data: string }
   | { type: 'terminal_bell'; sessionId?: string; at: number; source?: string; message?: string }
+  | { type: 'cli_session_end'; sessionId?: string; at: number; source?: string; message?: string }
   | { type: 'session_list'; sessions: SessionInfo[] }
   | { type: 'session_created'; sessionId: string; name: string }
   | { type: 'session_destroyed'; sessionId: string }

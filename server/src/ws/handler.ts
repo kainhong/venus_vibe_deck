@@ -1,7 +1,10 @@
 import type { WebSocket, RawData } from 'ws';
+import { randomUUID } from 'node:crypto';
 import type { SessionManager } from '../session/SessionManager.js';
 import type { ClientMessage, ServerMessage } from '../protocol.js';
 import { createLogger } from '../logger.js';
+import { loadConfig } from '../storage/cliConfigStore.js';
+import { ensureCliHooks } from '../hooks/cliHooks.js';
 
 const logger = createLogger('ws');
 
@@ -41,8 +44,19 @@ export class ClientConnection {
           source: event.source,
         });
       }
+      if (event.type === 'cli_session_end') {
+        this.send({
+          type: 'cli_session_end',
+          sessionId: event.sessionId,
+          at: event.at,
+          source: event.source,
+          message: event.message,
+        });
+      }
     });
-    ws.on('message', (raw) => this.onMessage(raw));
+    ws.on('message', (raw) => {
+      void this.onMessage(raw);
+    });
     ws.on('close', () => this.close());
     ws.on('error', () => this.close());
   }
@@ -95,7 +109,7 @@ export class ClientConnection {
     return matches.length === 1 ? matches[0].id : undefined;
   }
 
-  private onMessage(raw: RawData): void {
+  private async onMessage(raw: RawData): Promise<void> {
     let msg: ClientMessage;
     try {
       msg = JSON.parse(raw.toString()) as ClientMessage;
@@ -141,7 +155,16 @@ export class ClientConnection {
           // resume 拼装:resumeArg 必须在前 → claude -c --xxx(spec-ui §4)
           const baseArgs = msg.args ?? [];
           const finalArgs = msg.resume && msg.resumeArg ? [msg.resumeArg, ...baseArgs] : baseArgs;
+          const sessionId = randomUUID();
+          const cliConfig = await this.resolveCliConfig(msg.cliConfigId);
+          await ensureCliHooks({
+            cliConfig,
+            command: msg.command_bin,
+            cwd: msg.cwd,
+            sessionId,
+          });
           const session = this.manager.create({
+            id: sessionId,
             name: msg.name ?? msg.command_bin,
             command: msg.command_bin,
             args: finalArgs,
@@ -176,6 +199,17 @@ export class ClientConnection {
         }
         break;
       }
+    }
+  }
+
+  private async resolveCliConfig(cliConfigId: string | undefined) {
+    if (!cliConfigId) return undefined;
+    try {
+      const doc = await loadConfig();
+      return doc.cliConfigs.find((config) => config.id === cliConfigId);
+    } catch (err) {
+      logger.warn('failed to load cli config for hook setup', { cliConfigId, err: err as Error });
+      return undefined;
     }
   }
 }

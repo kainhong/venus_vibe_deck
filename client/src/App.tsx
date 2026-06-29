@@ -23,6 +23,7 @@ const BROWSER_SPEECH_STORAGE_KEY = 'venus-vibe-deck.browser-speech.v1';
 
 type View = 'terminal' | 'settings' | 'speechTest' | 'newSession' | 'history' | 'about';
 type SessionAlert = { at: number; source?: string; message?: string };
+type SpeechNotice = { at: number; text: string; played: boolean };
 
 export default function App() {
   usePushNotifications();
@@ -50,6 +51,9 @@ export default function App() {
     setImmersivePending(v);
   }, []);
   const [bellActive, setBellActive] = useState(false);
+  const [speechNotice, setSpeechNotice] = useState<SpeechNotice | undefined>(undefined);
+  const [speechNoticeBreathing, setSpeechNoticeBreathing] = useState(false);
+  const speechNoticeAudioRef = useRef<HTMLAudioElement | null>(null);
   const pendingHiddenBellRef = useRef(false);
   const [immersiveVoicePoint, setImmersiveVoicePoint] = useState<{ x: number; y: number } | null>(null);
   const immersivePressTimerRef = useRef<number | undefined>(undefined);
@@ -137,6 +141,33 @@ export default function App() {
     }, 1800);
     return () => window.clearTimeout(timer);
   }, [api.lastBellAt]);
+
+  useEffect(() => {
+    const message = api.lastBellMessage?.trim();
+    if (!api.lastBellAt || !message) return;
+    setSpeechNotice({ at: api.lastBellAt, text: message, played: false });
+    setSpeechNoticeBreathing(true);
+    const timer = window.setTimeout(() => setSpeechNoticeBreathing(false), 15000);
+    return () => window.clearTimeout(timer);
+  }, [api.lastBellAt, api.lastBellMessage]);
+
+  const playSpeechNotice = useCallback(async () => {
+    if (!speechNotice?.text) return;
+    try {
+      speechNoticeAudioRef.current?.pause();
+      const blob = await httpApi.synthesizeTts(speechNotice.text);
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      speechNoticeAudioRef.current = audio;
+      audio.addEventListener('ended', () => URL.revokeObjectURL(url), { once: true });
+      audio.addEventListener('error', () => URL.revokeObjectURL(url), { once: true });
+      await audio.play();
+      setSpeechNotice((prev) => prev && prev.at === speechNotice.at ? { ...prev, played: true } : prev);
+      setSpeechNoticeBreathing(false);
+    } catch (err) {
+      console.warn('[tts] playback failed:', err);
+    }
+  }, [speechNotice]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -346,6 +377,9 @@ export default function App() {
         onAbout={() => setView('about')}
         onCloseCurrent={closeCurrent}
         bellActive={bellActive}
+        speechNoticeState={!speechNotice ? 'empty' : speechNotice.played ? 'played' : 'unplayed'}
+        speechNoticeBreathing={speechNoticeBreathing}
+        onPlaySpeechNotice={playSpeechNotice}
       />
 
       <main className="terminal-area">

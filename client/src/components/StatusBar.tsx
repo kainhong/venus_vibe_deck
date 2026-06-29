@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { SessionInfo } from '../types';
 import linkIcon from '../asserts/icons/link.svg';
 import linkBrokenIcon from '../asserts/icons/unlink.svg';
+import voiceIcon from '../asserts/icons/voice2.svg';
 
 const SESSION_ID_LEN = 8;
 
@@ -17,12 +18,30 @@ interface StatusBarProps {
   onAbout: () => void;
   onCloseCurrent: () => void;
   bellActive?: boolean;
+  speechNoticeState?: 'empty' | 'unplayed' | 'played';
+  speechNoticeBreathing?: boolean;
+  onPlaySpeechNotice?: () => void;
 }
 
 /**
  * 顶部状态栏:连接状态 + Session 下拉 + 常用会话操作。
  */
-export function StatusBar({ connected, sessions, currentSessionId, onSelect, onNew, onHistory, onSettings, onSpeechTest, onAbout, onCloseCurrent, bellActive = false }: StatusBarProps) {
+export function StatusBar({
+  connected,
+  sessions,
+  currentSessionId,
+  onSelect,
+  onNew,
+  onHistory,
+  onSettings,
+  onSpeechTest,
+  onAbout,
+  onCloseCurrent,
+  bellActive = false,
+  speechNoticeState = 'empty',
+  speechNoticeBreathing = false,
+  onPlaySpeechNotice,
+}: StatusBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +83,16 @@ export function StatusBar({ connected, sessions, currentSessionId, onSelect, onN
         </button>
         <button type="button" className="header-btn" onClick={onHistory} aria-label="历史会话">
           ↺
+        </button>
+        <button
+          type="button"
+          className={`speech-notice-btn ${speechNoticeState}${speechNoticeBreathing ? ' breathing' : ''}`}
+          onClick={onPlaySpeechNotice}
+          disabled={speechNoticeState === 'empty' || !onPlaySpeechNotice}
+          aria-label="播放任务完成播报"
+          title="播放任务完成播报"
+        >
+          <img src={voiceIcon} alt="" aria-hidden />
         </button>
         <div className="header-menu-wrap" ref={menuRef}>
           <button type="button" className="header-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="更多">

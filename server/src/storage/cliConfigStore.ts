@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { readJson, writeJson } from './jsonStore.js';
 import { CONFIG_FILE } from './paths.js';
+import type { RuntimeSettings } from '../runtimeSettings.js';
 
 export interface CliConfig {
   id: string;
@@ -12,6 +13,7 @@ export interface CliConfig {
 }
 
 export interface ConfigDoc {
+  runtime?: RuntimeSettings;
   cliConfigs: CliConfig[];
   voiceSettings?: {
     useServerVoice: boolean;

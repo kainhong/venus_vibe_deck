@@ -7,6 +7,7 @@ import { createLogger } from '../logger.js';
 const logger = createLogger('pty');
 
 export interface PtySessionOptions {
+  id?: string;
   command?: string;
   args?: string[];
   name?: string;
@@ -14,6 +15,7 @@ export interface PtySessionOptions {
   cwd?: string;
   cols?: number;
   rows?: number;
+  env?: Record<string, string>;
 }
 
 /**
@@ -37,7 +39,7 @@ export class PtySession {
   private readonly exitListeners = new Set<(info: { exitCode: number; signal?: number }) => void>();
 
   constructor(opts: PtySessionOptions = {}) {
-    this.id = randomUUID();
+    this.id = opts.id ?? randomUUID();
     this.name = opts.name ?? `session-${this.id.slice(0, 8)}`;
     this.createdAt = Date.now();
 
@@ -50,6 +52,10 @@ export class PtySession {
     env.TERM = env.TERM ?? 'xterm-256color';
     env.VENUS_SESSION_ID = this.id;
     env.VENUS_NOTIFICATION_URL = `http://127.0.0.1:${config.port}/api/notification`;
+    env.VENUS_HOOK_URL = `http://127.0.0.1:${config.port}/api/hooks/cli-event`;
+    for (const [k, v] of Object.entries(opts.env ?? {})) {
+      env[k] = v;
+    }
 
     const command = opts.command ?? config.defaultCommand;
     const args = opts.args ?? config.defaultArgs;

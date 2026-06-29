@@ -1,0 +1,14 @@
+{
+    "session_id": "9e3bf191-8579-4b86-9291-1c2962ba01ca",
+    "transcript_path": "/Users/kain/.claude/projects/-Users-kain-e-venus-venus-agent-hube/9e3bf191-8579-4b86-9291-1c2962ba01ca.jsonl",
+    "cwd": "/Users/kain/e/venus/venus-agent-hube",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+        "level": "high"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "根据调研，以下是适合你需求（本地 CPU、低资源、语音克隆）的开源方案对比：\n\n## 推荐方案\n\n### 1. GPT-SoVITS（推荐）\n\n| 项目 | 说明 |\n|------|------|\n| 地址 | https://github.com/RVC-Boss/GPT-SoVITS |\n| 克隆方式 | 5 秒音频零样本克隆；1 分钟音频微调效果更好 |\n| CPU 性能 | M4 CPU RTF=0.526（1 秒音频需 0.5 秒合成），可用 |\n| 语言 | 中英日韩粤 |\n| 许可 | MIT |\n\n**优势**：克隆效果好、中文支持最佳、有 CPU 专门优化版（GPT-SoVITS-CPUFast）。\n**劣势**：模型偏大，首次加载慢，内存需求约 4-6GB。\n\n### 2. OpenVoice V2\n\n| 项目 | 说明 |\n|------|------|\n| 地址 | https://github.com/myshell-ai/OpenVoice |\n| 克隆方式 | 零样本，短音频即可克隆音色 |\n| 架构 | 基于 VITS2，模型较小 |\n| 语言 | 中英日韩法西 |\n| 许可 | MIT |\n\n**优势**：模型轻量（基于 VITS2，约 100-200MB）、推理快、CPU 友好。\n**劣势**：中文克隆效果不如 GPT-SoVITS 自然，音色相似度稍低。\n\n### 3. CosyVoice（阿里，同 SenseVoice 生态）\n\n| 项目 | 说明 |\n|------|------|\n| 地址 | https://github.com/FunAudioLLM/CosyVoice |\n| 克隆方式 | 零样本多语言/跨语言克隆 |\n| 模型 | 300M / 500M 参数 |\n| 语言 | 中英日韩德法俄等 9 种 + 方言 |\n| 许可 | Apache 2.0 |\n\n**优势**：和 SenseVoiceSmall（你已用的 ASR）同生态，效果好，500M 参数。\n**劣势**：官方只提供 GPU 部署文档，CPU 性能未知，可能偏重。\n\n## 我的建议\n\n对你的场景（本地 CPU、资源有限、中文为主）：\n\n- **轻量优先** → **OpenVoice V2**：模型小、内存低（约 2GB 够用）、CPU 推理可接受\n- **效果优先** → **GPT-SoVITS**：中文克隆效果最好，有 CPU 优化版，但资源占用更大（4-6GB）\n- **生态统一** → **CosyVoice**：和 SenseVoice 配套，但 CPU 可行性需验证\n\n如果你的机器有 4GB+ 空闲内存且追求中文效果，GPT-SoVITS 的 CPU 版是最优选。如果资源紧张优先跑起来，OpenVoice V2 更轻。\n\n要我做更深入的验证（比如实际跑一下模型看 CPU 性能）吗？",
+    "background_tasks": [],
+    "session_crons": []
+}

@@ -47,6 +47,16 @@ async function sendJson<T>(method: string, url: string, body: unknown): Promise<
   return (await res.json()) as T;
 }
 
+async function sendBlob(method: string, url: string, body: unknown): Promise<Blob> {
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return await res.blob();
+}
+
 function authHeaders(): Record<string, string> {
   const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -72,4 +82,5 @@ export const api = {
   getPushPublicKey: () => getJson<{ publicKey: string }>('/api/push/public-key'),
   subscribePush: (subscription: PushSubscriptionJSON) =>
     sendJson<{ ok: boolean; count: number }>('POST', '/api/push/subscribe', subscription),
+  synthesizeTts: (text: string) => sendBlob('POST', '/api/tts', { text }),
 };

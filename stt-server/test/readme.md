@@ -21,4 +21,16 @@ cd ./stt-server
 
   #脚本会输出本地识别、阿里云识别，以及两者相似度对比。
 
+  #测试百炼 TTS，使用已复刻的 VOICE_TTS_VOICE：
+
+  .venv/bin/python test/test_tts.py
+
+  #指定合成文本：
+
+  .venv/bin/python test/test_tts.py "你好，这是一次复刻音色测试。"
+
+  #指定输出文件：
+
+  .venv/bin/python test/test_tts.py --output data/output/demo.mp3
+
   ```
