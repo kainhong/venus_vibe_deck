@@ -37,9 +37,16 @@ cd stt-server
 
 首次运行会自动：
 1. 创建 `.venv` 虚拟环境
-2. 安装依赖（funasr、torch 等）
+2. 安装依赖（funasr、CPU-only torch 等）
 3. 下载 SenseVoiceSmall 模型（约 500MB，仅首次）
 4. 启动服务（默认 `127.0.0.1:7000`）
+
+`start.sh` 在 Linux 上会先从 PyTorch CPU index 安装 CPU-only `torch/torchaudio`，避免 PyPI 默认 Linux wheel 拉取 `nvidia-cuda-*` 依赖。macOS 上没有 CUDA 依赖问题，会使用普通 PyPI wheel。已有 `.venv` 如果之前装过 CUDA 相关包，需要重建虚拟环境：
+
+```bash
+rm -rf .venv
+./start.sh
+```
 
 ## 配置
 
@@ -52,7 +59,7 @@ cd stt-server
 | `STT_MODEL` | FunASR 模型 ID | `iic/SenseVoiceSmall` |
 | `STT_DEVICE` | 推理设备 | `cpu` |
 
-如有 GPU 可设 `STT_DEVICE=cuda`。
+默认安装 CPU-only PyTorch，不包含 CUDA 运行库。如需 GPU，需要自行改用匹配 CUDA 的 PyTorch wheel，并设置 `STT_DEVICE=cuda`。
 
 ## API
 

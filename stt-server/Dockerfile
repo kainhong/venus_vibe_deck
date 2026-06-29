@@ -29,6 +29,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 # 先拷依赖清单 + 源码,利用层缓存(pyproject 不变则跳过昂贵的 torch/funasr 安装)
 COPY pyproject.toml ./
 COPY src ./src
+RUN uv pip install --system --index-url https://download.pytorch.org/whl/cpu torch==2.5.1+cpu torchaudio==2.5.1+cpu
 RUN uv pip install --system -e .
 
 # 运行时配置(端口对齐 README/start.sh 的 7000;host 暴露给容器网络)

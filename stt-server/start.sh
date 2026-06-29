@@ -8,6 +8,11 @@ if [ ! -d ".venv" ]; then
 fi
 
 echo "安装依赖..."
+if [ "$(uname -s)" = "Linux" ]; then
+  uv pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1+cpu torchaudio==2.5.1+cpu
+else
+  uv pip install torch torchaudio
+fi
 uv pip install -e .
 
 echo "启动 STT 服务 (端口: ${STT_PORT:-7000})..."
