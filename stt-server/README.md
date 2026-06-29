@@ -41,6 +41,23 @@ cd stt-server
 3. 下载 SenseVoiceSmall 模型（约 500MB，仅首次）
 4. 启动服务（默认 `127.0.0.1:7000`）
 
+`start.sh` 默认后台启动服务，并支持常用管理命令：
+
+```bash
+./start.sh start
+./start.sh stop
+./start.sh restart
+./start.sh status
+./start.sh log
+./start.sh foreground
+```
+
+如需从局域网访问：
+
+```bash
+STT_HOST=0.0.0.0 ./start.sh restart
+```
+
 `start.sh` 在 Linux 上会先从 PyTorch CPU index 安装 CPU-only `torch/torchaudio`，避免 PyPI 默认 Linux wheel 拉取 `nvidia-cuda-*` 依赖。macOS 上没有 CUDA 依赖问题，会使用普通 PyPI wheel。已有 `.venv` 如果之前装过 CUDA 相关包，需要重建虚拟环境：
 
 ```bash

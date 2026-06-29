@@ -29,7 +29,7 @@ REPO_ROOT = ROOT.parent
 TEST_ENV_FILE = ROOT / "test" / ".env"
 APP_SETTINGS_FILE = REPO_ROOT / "server" / "config" / "settings.json"
 DEFAULT_OUTPUT_DIR = ROOT / "data" / "output"
-DEFAULT_TTS_BASE_URL = "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer"
+DEFAULT_TTS_BASE_URL = # "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer"
 DEFAULT_TTS_MODEL = "cosyvoice-v3.5-plus"
 DEFAULT_TTS_TEXT = "当地时间6月24日傍晚，委内瑞拉北部在40秒内接连遭遇7.2级与7.5级两次强震。这是该国1900年以来最强地震，也是全球首次监测到同一断裂带一分钟内连发两次七级以上地震。本次地震已造成920人遇难、3360人受伤、超5万人失联，数百栋房屋损毁，7名中国公民不幸罹难。灾害损失最高或将占到委内瑞拉GDP的10%，灾后重建与经济修复的双重压力，或将定义委内瑞拉未来的发展轨迹。"
 
