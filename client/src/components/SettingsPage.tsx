@@ -5,8 +5,10 @@ interface SettingsPageProps {
   handMode: HandMode;
   useBrowserSpeechApi: boolean;
   serverVoiceEnabled: boolean;
+  autoPlayTaskSpeech: boolean;
   onHandModeChange: (mode: HandMode) => void;
   onBrowserSpeechChange: (enabled: boolean) => void;
+  onAutoPlayTaskSpeechChange: (enabled: boolean) => void;
   onClose: () => void;
 }
 
@@ -18,8 +20,10 @@ export function SettingsPage({
   handMode,
   useBrowserSpeechApi,
   serverVoiceEnabled,
+  autoPlayTaskSpeech,
   onHandModeChange,
   onBrowserSpeechChange,
+  onAutoPlayTaskSpeechChange,
   onClose,
 }: SettingsPageProps) {
   const { config } = useApp();
@@ -81,6 +85,18 @@ export function SettingsPage({
             {!serverVoiceEnabled && (
               <p className="hint">服务端 STT 未开启时将使用浏览器 Web Speech API。</p>
             )}
+            <div className="settings-option-row">
+              <span className="settings-option-label">任务完成自动播报</span>
+              <label className="settings-switch">
+                <input
+                  type="checkbox"
+                  checked={autoPlayTaskSpeech}
+                  onChange={(e) => onAutoPlayTaskSpeechChange(e.target.checked)}
+                />
+                <span>{autoPlayTaskSpeech ? '开启' : '关闭'}</span>
+              </label>
+            </div>
+            <p className="hint">开启后,收到任务完成通知时会自动播放顶部语音图标对应的播报内容。</p>
             <div className="voice-command-summary" aria-label="语音指令别名">
               {(config?.voiceSettings?.commands ?? []).map((command) => (
                 <p className="voice-command-line" key={command.id}>

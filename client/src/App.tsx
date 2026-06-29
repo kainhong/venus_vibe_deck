@@ -20,6 +20,7 @@ const SESSION_HISTORY_STORAGE_KEY = 'venus-vibe-deck.session-history.v1';
 const SESSION_HISTORY_LIMIT = 10;
 const DISPLAY_HAND_STORAGE_KEY = 'venus-vibe-deck.display-hand.v1';
 const BROWSER_SPEECH_STORAGE_KEY = 'venus-vibe-deck.browser-speech.v1';
+const TASK_SPEECH_AUTOPLAY_STORAGE_KEY = 'venus-vibe-deck.task-speech-autoplay.v1';
 
 type View = 'terminal' | 'settings' | 'speechTest' | 'newSession' | 'history' | 'about';
 type SessionAlert = { at: number; source?: string; message?: string };
@@ -44,6 +45,7 @@ export default function App() {
   const [keyboardEnabled, setKeyboardEnabled] = useState(false);
   const [handMode, setHandModeState] = useState<HandMode>(() => readHandMode());
   const [browserSpeechPreference, setBrowserSpeechPreference] = useState<boolean | null>(() => readBrowserSpeechPreference());
+  const [autoPlayTaskSpeech, setAutoPlayTaskSpeech] = useState(() => readAutoPlayTaskSpeech());
   const [immersive, setImmersive] = useState(false);
   const [immersivePending, setImmersivePending] = useState(false);
   const immersivePendingRef = useRef(false);
@@ -59,6 +61,7 @@ export default function App() {
   const speechNoticeAbortRef = useRef<AbortController | null>(null);
   const speechNoticeUrlRef = useRef<string | null>(null);
   const speechNoticeRunRef = useRef(0);
+  const autoPlayedSpeechNoticeRef = useRef<number | undefined>(undefined);
   const pendingHiddenBellRef = useRef(false);
   const [immersiveVoicePoint, setImmersiveVoicePoint] = useState<{ x: number; y: number } | null>(null);
   const immersivePressTimerRef = useRef<number | undefined>(undefined);
@@ -215,6 +218,14 @@ export default function App() {
     }
   }, [speechNotice, speechNoticePlaying]);
 
+  useEffect(() => {
+    if (!autoPlayTaskSpeech || !speechNotice || speechNotice.played || speechNoticePlaying) return;
+    if (document.visibilityState !== 'visible') return;
+    if (autoPlayedSpeechNoticeRef.current === speechNotice.at) return;
+    autoPlayedSpeechNoticeRef.current = speechNotice.at;
+    void playSpeechNotice();
+  }, [autoPlayTaskSpeech, playSpeechNotice, speechNotice, speechNoticePlaying]);
+
   const speechNoticeState: SpeechNoticeState = !speechNotice
     ? 'empty'
     : speechNoticePlaying
@@ -258,6 +269,10 @@ export default function App() {
 
   const handleBrowserSpeechChange = useCallback((enabled: boolean) => {
     setBrowserSpeechPreference(persistBrowserSpeechPreference(enabled));
+  }, []);
+
+  const handleAutoPlayTaskSpeechChange = useCallback((enabled: boolean) => {
+    setAutoPlayTaskSpeech(persistAutoPlayTaskSpeech(enabled));
   }, []);
 
   const enterImmersive = useCallback(() => {
@@ -538,8 +553,10 @@ export default function App() {
           handMode={handMode}
           useBrowserSpeechApi={getUseBrowserSpeechApi(config?.voiceSettings?.useServerVoice ?? false, browserSpeechPreference)}
           serverVoiceEnabled={config?.voiceSettings?.useServerVoice ?? false}
+          autoPlayTaskSpeech={autoPlayTaskSpeech}
           onHandModeChange={handleHandModeChange}
           onBrowserSpeechChange={handleBrowserSpeechChange}
+          onAutoPlayTaskSpeechChange={handleAutoPlayTaskSpeechChange}
           onClose={() => setView('terminal')}
         />
       )}
@@ -670,6 +687,23 @@ function persistBrowserSpeechPreference(enabled: boolean): boolean {
     localStorage.setItem(BROWSER_SPEECH_STORAGE_KEY, String(enabled));
   } catch {
     // 语音识别偏好持久化失败时只影响下次进入的默认值。
+  }
+  return enabled;
+}
+
+function readAutoPlayTaskSpeech(): boolean {
+  try {
+    return localStorage.getItem(TASK_SPEECH_AUTOPLAY_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function persistAutoPlayTaskSpeech(enabled: boolean): boolean {
+  try {
+    localStorage.setItem(TASK_SPEECH_AUTOPLAY_STORAGE_KEY, String(enabled));
+  } catch {
+    // 自动播报偏好持久化失败时只影响下次进入的默认值。
   }
   return enabled;
 }
