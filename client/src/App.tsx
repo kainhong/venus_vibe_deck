@@ -24,6 +24,7 @@ const BROWSER_SPEECH_STORAGE_KEY = 'venus-vibe-deck.browser-speech.v1';
 type View = 'terminal' | 'settings' | 'speechTest' | 'newSession' | 'history' | 'about';
 type SessionAlert = { at: number; source?: string; message?: string };
 type SpeechNotice = { at: number; text: string; played: boolean };
+type SpeechNoticeState = 'empty' | 'unplayed' | 'playing' | 'played';
 
 export default function App() {
   usePushNotifications();
@@ -53,7 +54,11 @@ export default function App() {
   const [bellActive, setBellActive] = useState(false);
   const [speechNotice, setSpeechNotice] = useState<SpeechNotice | undefined>(undefined);
   const [speechNoticeBreathing, setSpeechNoticeBreathing] = useState(false);
+  const [speechNoticePlaying, setSpeechNoticePlaying] = useState(false);
   const speechNoticeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const speechNoticeAbortRef = useRef<AbortController | null>(null);
+  const speechNoticeUrlRef = useRef<string | null>(null);
+  const speechNoticeRunRef = useRef(0);
   const pendingHiddenBellRef = useRef(false);
   const [immersiveVoicePoint, setImmersiveVoicePoint] = useState<{ x: number; y: number } | null>(null);
   const immersivePressTimerRef = useRef<number | undefined>(undefined);
@@ -153,21 +158,70 @@ export default function App() {
 
   const playSpeechNotice = useCallback(async () => {
     if (!speechNotice?.text) return;
+    if (speechNoticePlaying) {
+      speechNoticeRunRef.current += 1;
+      speechNoticeAbortRef.current?.abort();
+      speechNoticeAbortRef.current = null;
+      const audio = speechNoticeAudioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.removeAttribute('src');
+        audio.load();
+      }
+      speechNoticeAudioRef.current = null;
+      if (speechNoticeUrlRef.current) URL.revokeObjectURL(speechNoticeUrlRef.current);
+      speechNoticeUrlRef.current = null;
+      setSpeechNoticePlaying(false);
+      return;
+    }
+
+    const runId = speechNoticeRunRef.current + 1;
+    speechNoticeRunRef.current = runId;
+    const controller = new AbortController();
+    speechNoticeAbortRef.current = controller;
+    setSpeechNoticePlaying(true);
     try {
       speechNoticeAudioRef.current?.pause();
-      const blob = await httpApi.synthesizeTts(speechNotice.text);
+      if (speechNoticeUrlRef.current) URL.revokeObjectURL(speechNoticeUrlRef.current);
+      speechNoticeUrlRef.current = null;
+      const blob = await httpApi.synthesizeTts(speechNotice.text, controller.signal);
+      if (speechNoticeRunRef.current !== runId) return;
       const url = URL.createObjectURL(blob);
+      speechNoticeUrlRef.current = url;
       const audio = new Audio(url);
       speechNoticeAudioRef.current = audio;
-      audio.addEventListener('ended', () => URL.revokeObjectURL(url), { once: true });
-      audio.addEventListener('error', () => URL.revokeObjectURL(url), { once: true });
+      audio.addEventListener('ended', () => {
+        if (speechNoticeUrlRef.current === url) speechNoticeUrlRef.current = null;
+        URL.revokeObjectURL(url);
+      }, { once: true });
+      audio.addEventListener('error', () => {
+        if (speechNoticeUrlRef.current === url) speechNoticeUrlRef.current = null;
+        URL.revokeObjectURL(url);
+      }, { once: true });
       await audio.play();
+      if (speechNoticeRunRef.current !== runId) return;
       setSpeechNotice((prev) => prev && prev.at === speechNotice.at ? { ...prev, played: true } : prev);
       setSpeechNoticeBreathing(false);
     } catch (err) {
-      console.warn('[tts] playback failed:', err);
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        console.warn('[tts] playback failed:', err);
+      }
+    } finally {
+      if (speechNoticeRunRef.current === runId) {
+        speechNoticeAbortRef.current = null;
+        setSpeechNoticePlaying(false);
+      }
     }
-  }, [speechNotice]);
+  }, [speechNotice, speechNoticePlaying]);
+
+  const speechNoticeState: SpeechNoticeState = !speechNotice
+    ? 'empty'
+    : speechNoticePlaying
+      ? 'playing'
+      : speechNotice.played
+        ? 'played'
+        : 'unplayed';
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -377,7 +431,7 @@ export default function App() {
         onAbout={() => setView('about')}
         onCloseCurrent={closeCurrent}
         bellActive={bellActive}
-        speechNoticeState={!speechNotice ? 'empty' : speechNotice.played ? 'played' : 'unplayed'}
+        speechNoticeState={speechNoticeState}
         speechNoticeBreathing={speechNoticeBreathing}
         onPlaySpeechNotice={playSpeechNotice}
       />

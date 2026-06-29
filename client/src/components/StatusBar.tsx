@@ -18,7 +18,7 @@ interface StatusBarProps {
   onAbout: () => void;
   onCloseCurrent: () => void;
   bellActive?: boolean;
-  speechNoticeState?: 'empty' | 'unplayed' | 'played';
+  speechNoticeState?: 'empty' | 'unplayed' | 'playing' | 'played';
   speechNoticeBreathing?: boolean;
   onPlaySpeechNotice?: () => void;
 }
@@ -89,8 +89,8 @@ export function StatusBar({
           className={`speech-notice-btn ${speechNoticeState}${speechNoticeBreathing ? ' breathing' : ''}`}
           onClick={onPlaySpeechNotice}
           disabled={speechNoticeState === 'empty' || !onPlaySpeechNotice}
-          aria-label="播放任务完成播报"
-          title="播放任务完成播报"
+          aria-label={speechNoticeState === 'playing' ? '停止任务完成播报' : '播放任务完成播报'}
+          title={speechNoticeState === 'playing' ? '停止任务完成播报' : '播放任务完成播报'}
         >
           <img src={voiceIcon} alt="" aria-hidden />
         </button>

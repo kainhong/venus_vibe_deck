@@ -47,9 +47,10 @@ async function sendJson<T>(method: string, url: string, body: unknown): Promise<
   return (await res.json()) as T;
 }
 
-async function sendBlob(method: string, url: string, body: unknown): Promise<Blob> {
+async function sendBlob(method: string, url: string, body: unknown, signal?: AbortSignal): Promise<Blob> {
   const res = await fetch(url, {
     method,
+    signal,
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
@@ -82,5 +83,5 @@ export const api = {
   getPushPublicKey: () => getJson<{ publicKey: string }>('/api/push/public-key'),
   subscribePush: (subscription: PushSubscriptionJSON) =>
     sendJson<{ ok: boolean; count: number }>('POST', '/api/push/subscribe', subscription),
-  synthesizeTts: (text: string) => sendBlob('POST', '/api/tts', { text }),
+  synthesizeTts: (text: string, signal?: AbortSignal) => sendBlob('POST', '/api/tts', { text }, signal),
 };
