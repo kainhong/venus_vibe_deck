@@ -52,11 +52,15 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil((async () => {
+    const sessionId = event.notification.data?.sessionId;
+    const targetUrl = sessionId ? `/?session=${encodeURIComponent(String(sessionId).slice(0, 8))}` : '/';
     const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     if (allClients.length > 0) {
-      await allClients[0].focus();
+      const client = allClients[0];
+      if ('navigate' in client) await client.navigate(targetUrl);
+      await client.focus();
       return;
     }
-    await self.clients.openWindow('/');
+    await self.clients.openWindow(targetUrl);
   })());
 });

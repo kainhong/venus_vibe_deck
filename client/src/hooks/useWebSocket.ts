@@ -125,6 +125,23 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
       }
     };
 
+    const markNeedsRecovery = () => {
+      refreshAfterHidden = true;
+      clearReconnectTimer();
+    };
+
+    const closeStaleSocket = () => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState === WebSocket.CLOSED) return;
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.close();
+      wsRef.current = null;
+      setConnected(false);
+    };
+
     const sendHello = (ws: WebSocket) => {
       ws.send(JSON.stringify({ action: 'system', command: 'hello', targetSessionId: readSessionToken() } satisfies ClientMessage));
     };
@@ -261,11 +278,16 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
 
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        refreshAfterHidden = true;
+        markNeedsRecovery();
         return;
       }
       recoverConnection(refreshAfterHidden);
       refreshAfterHidden = false;
+    };
+
+    const onPageHide = () => {
+      markNeedsRecovery();
+      closeStaleSocket();
     };
 
     const onPageShow = (event: PageTransitionEvent) => {
@@ -273,21 +295,37 @@ export function useWebSocket(onTerminalData: (data: string) => void, onTerminalR
       refreshAfterHidden = false;
     };
 
+    const onFreeze = () => {
+      markNeedsRecovery();
+      closeStaleSocket();
+    };
+
+    const onResume = () => {
+      recoverConnection(true);
+      refreshAfterHidden = false;
+    };
+
     const onFocus = () => recoverConnection();
     const onOnline = () => recoverConnection();
 
     connect();
+    window.addEventListener('pagehide', onPageHide);
     window.addEventListener('pageshow', onPageShow);
     window.addEventListener('focus', onFocus);
     window.addEventListener('online', onOnline);
+    document.addEventListener('freeze', onFreeze);
+    document.addEventListener('resume', onResume);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       disposed = true;
       clearReconnectTimer();
+      window.removeEventListener('pagehide', onPageHide);
       window.removeEventListener('pageshow', onPageShow);
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('online', onOnline);
+      document.removeEventListener('freeze', onFreeze);
+      document.removeEventListener('resume', onResume);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       wsRef.current?.close();
       wsRef.current = null;
