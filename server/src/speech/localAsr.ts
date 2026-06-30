@@ -13,15 +13,21 @@ export async function transcribeWithLocalAsr({ audio, sampleRate, language }: Lo
   const url = `${config.voice.localAsrUrl.replace(/\/$/, '')}/transcribe`;
   logger.info('local asr request', { audioBytes: audio.length, sampleRate, language });
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      audio: audio.toString('base64'),
-      sample_rate: sampleRate,
-      language,
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audio: audio.toString('base64'),
+        sample_rate: sampleRate,
+        language,
+      }),
+    });
+  } catch (err) {
+    logger.warn('local asr request failed', { url, err: err as Error });
+    throw new Error(`local ASR unavailable: ${url}`);
+  }
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
