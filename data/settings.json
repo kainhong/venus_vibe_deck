@@ -1,0 +1,224 @@
+{
+  "runtime": {
+    "server": {
+      "host": "0.0.0.0",
+      "port": 8001,
+      "logLevel": "info"
+    },
+    "storage": {
+      "dataDir": "~/.venus-vibe-deck",
+      "dirRoots": [
+        "~"
+      ]
+    },
+    "terminal": {
+      "defaultCommand": "bash",
+      "defaultArgs": [],
+      "cols": 80,
+      "rows": 24,
+      "scrollbackBytes": 51200
+    },
+    "auth": {
+      "enabled": true,
+      "ttlDays": 7
+    },
+    "voice": {
+      "useServerVoice": false,
+      "asrProvider": "cloud",
+      "localAsrUrl": "http://127.0.0.1:7000",
+      "asrModel": "qwen3-asr-flash-realtime",
+      "asrSampleRate": 16000,
+      "asrChunkBytes": 3200,
+      "asrChunkIntervalMs": 40,
+      "asrTimeoutMs": 30000,
+      "llmModel": "qwen-plus",
+      "llmTimeoutMs": 30000,
+      "ttsEnabled": true,
+      "ttsProvider": "edge",
+      "ttsBaseUrl": "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+      "ttsModel": "cosyvoice-v3.5-plus",
+      "ttsVoice": "zh-CN-XiaoxiaoNeural",
+      "ttsFormat": "mp3",
+      "ttsSampleRate": 24000,
+      "ttsRate": "+0%",
+      "ttsVolume": "+0%",
+      "ttsPitch": "+0Hz",
+      "timbres":[
+        {
+          "name": "cosyvoice-v3.5-plus-bailian-c91dbd804e184104b4347f625d313af9",
+          "label": "小A"
+        },{
+          "name": "cosyvoice-v3.5-plus-bailian-4baab8550dca42b09996ea9f92130702",
+          "label": "小Lin"
+        }, {
+          "name": "cosyvoice-v3.5-plus-bailian-25077fbc0dee48e78b697cdebb08229d",
+          "label": "摩斯"
+        }, {
+          "name": "cosyvoice-v3.5-plus-bailian-c700d6a1284d48d49ee7098b06825c15",
+          "label": "凯瑞甘"
+        }, {
+          "name": "zh-CN-XiaoxiaoNeural",
+          "label": "小小"
+        }
+      ]
+    },
+    "webPush": {
+      "publicKey": "",
+      "subject": "mailto:you@example.com"
+    },
+    "hooks": {
+      "summaryMaxChars": 240
+    }
+  },
+  "cliConfigs": [
+    {
+      "id": "claude-default",
+      "name": "Claude",
+      "command": "claude",
+      "args": [
+        "--dangerously-skip-permissions"
+      ],
+      "resumeArg": "-c",
+      "isDefault": true
+    },
+    {
+      "id": "codex-default",
+      "name": "Codex",
+      "command": "codex",
+      "args": [
+        "--dangerously-bypass-approvals-and-sandbox"
+      ],
+      "resumeArg": "resume",
+      "isDefault": false
+    },
+    {
+      "id": "opencode-default",
+      "name": "OpenCode",
+      "command": "opencode",
+      "args": [],
+      "resumeArg": "-c",
+      "isDefault": false
+    }
+  ],
+  "voiceSettings": {
+    "commands": [
+      {
+        "id": "submit",
+        "label": "回车",
+        "input": "enter",
+        "keyboard": "\r",
+        "aliases": [
+          "回车",
+          "提交",
+          "发送",
+          "enter"
+        ]
+      },
+      {
+        "id": "escape",
+        "label": "Esc",
+        "input": "esc",
+        "keyboard": "\u001b",
+        "aliases": [
+          "取消",
+          "退出",
+          "返回",
+          "撤销",
+          "擦掉",
+          "不要了",
+          "esc",
+          "escape"
+        ]
+      },
+      {
+        "id": "interrupt",
+        "label": "中断",
+        "input": "ctrl+c",
+        "keyboard": "\u0003",
+        "aliases": [
+          "中断",
+          "停止",
+          "停止执行",
+          "打断",
+          "打断他",
+          "ctrl c",
+          "control c"
+        ]
+      },
+      {
+        "id": "up",
+        "label": "上",
+        "input": "arrowUp",
+        "keyboard": "\u001b[A",
+        "aliases": [
+          "上",
+          "向上",
+          "上一个",
+          "上一条",
+          "上一项",
+          "向上选择",
+          "选第一个"
+        ]
+      },
+      {
+        "id": "down",
+        "label": "下",
+        "input": "arrowDown",
+        "keyboard": "\u001b[B",
+        "aliases": [
+          "下",
+          "向下",
+          "下一个",
+          "下一条",
+          "下一项",
+          "往下一个"
+        ]
+      },
+      {
+        "id": "space",
+        "label": "空格",
+        "input": "space",
+        "keyboard": " ",
+        "aliases": [
+          "空格",
+          "选择",
+          "确定",
+          "确认",
+          "执行",
+          "space"
+        ]
+      },
+      {
+        "id": "backspace",
+        "label": "退格",
+        "input": "backspace",
+        "keyboard": "",
+        "aliases": [
+          "退格",
+          "删除",
+          "删掉",
+          "删一个",
+          "删除一下",
+          "帮我删除",
+          "往回删",
+          "backspace"
+        ]
+      },
+      {
+        "id": "clear",
+        "label": "清空",
+        "input": "ctrl+u",
+        "keyboard": "\u0015",
+        "aliases": [
+          "清空",
+          "清除",
+          "全部删除",
+          "全删",
+          "清空输入",
+          "清掉",
+          "clear"
+        ]
+      }
+    ]
+  }
+}
