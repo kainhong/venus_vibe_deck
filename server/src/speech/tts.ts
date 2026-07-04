@@ -9,21 +9,23 @@ const logger = createLogger('tts');
  * - edge: 走微软 Edge 在线 TTS,无需 key。
  * - bailian: 走百炼 SpeechSynthesizer,支持复刻 voice_id。
  */
-export async function synthesize(text: string): Promise<Buffer | null> {
+export async function synthesize(text: string, requestedVoice?: string): Promise<Buffer | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
   if (!config.voice.ttsEnabled) {
     logger.warn('tts disabled');
     return null;
   }
+  const voice = resolveVoice(requestedVoice);
 
   const startedAt = Date.now();
   try {
     const audio = config.voice.ttsProvider === 'bailian'
-      ? await synthesizeBailian(trimmed)
-      : await synthesizeEdge(trimmed);
+      ? await synthesizeBailian(trimmed, voice)
+      : await synthesizeEdge(trimmed, voice);
     logger.info('tts synthesize completed', {
       provider: config.voice.ttsProvider,
+      voice,
       textLength: trimmed.length,
       audioBytes: audio.length,
       elapsedMs: Date.now() - startedAt,
@@ -35,8 +37,15 @@ export async function synthesize(text: string): Promise<Buffer | null> {
   }
 }
 
-async function synthesizeEdge(text: string): Promise<Buffer> {
-  const tts = new EdgeTTS(text, config.voice.ttsVoice, {
+function resolveVoice(requestedVoice: string | undefined): string {
+  const voice = requestedVoice?.trim();
+  if (!voice) return config.voice.ttsVoice;
+  const timbres = config.voice.timbres ?? [];
+  return timbres.some((item) => item.name === voice) ? voice : config.voice.ttsVoice;
+}
+
+async function synthesizeEdge(text: string, voice: string): Promise<Buffer> {
+  const tts = new EdgeTTS(text, voice, {
     rate: config.voice.ttsRate,
     volume: config.voice.ttsVolume,
   });
@@ -44,7 +53,7 @@ async function synthesizeEdge(text: string): Promise<Buffer> {
   return Buffer.from(await result.audio.arrayBuffer());
 }
 
-async function synthesizeBailian(text: string): Promise<Buffer> {
+async function synthesizeBailian(text: string, voice: string): Promise<Buffer> {
   if (!config.voice.ttsApiKey) throw new Error('VOICE_TTS_API_KEY is required for Bailian TTS');
   const res = await fetch(config.voice.ttsBaseUrl, {
     method: 'POST',
@@ -57,7 +66,7 @@ async function synthesizeBailian(text: string): Promise<Buffer> {
       model: config.voice.ttsModel,
       input: { text },
       parameters: {
-        voice: config.voice.ttsVoice,
+        voice,
         format: config.voice.ttsFormat,
         sample_rate: config.voice.ttsSampleRate,
         rate: config.voice.ttsRate,

@@ -83,5 +83,5 @@ export const api = {
   getPushPublicKey: () => getJson<{ publicKey: string }>('/api/push/public-key'),
   subscribePush: (subscription: PushSubscriptionJSON) =>
     sendJson<{ ok: boolean; count: number }>('POST', '/api/push/subscribe', subscription),
-  synthesizeTts: (text: string, signal?: AbortSignal) => sendBlob('POST', '/api/tts', { text }, signal),
+  synthesizeTts: (text: string, voice?: string, signal?: AbortSignal) => sendBlob('POST', '/api/tts', { text, voice }, signal),
 };

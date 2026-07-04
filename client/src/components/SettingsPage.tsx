@@ -6,9 +6,11 @@ interface SettingsPageProps {
   useBrowserSpeechApi: boolean;
   serverVoiceEnabled: boolean;
   autoPlayTaskSpeech: boolean;
+  selectedTtsTimbre: string;
   onHandModeChange: (mode: HandMode) => void;
   onBrowserSpeechChange: (enabled: boolean) => void;
   onAutoPlayTaskSpeechChange: (enabled: boolean) => void;
+  onTtsTimbreChange: (voice: string) => void;
   onClose: () => void;
 }
 
@@ -21,12 +23,18 @@ export function SettingsPage({
   useBrowserSpeechApi,
   serverVoiceEnabled,
   autoPlayTaskSpeech,
+  selectedTtsTimbre,
   onHandModeChange,
   onBrowserSpeechChange,
   onAutoPlayTaskSpeechChange,
+  onTtsTimbreChange,
   onClose,
 }: SettingsPageProps) {
   const { config } = useApp();
+  const timbres = config?.runtime?.voice?.timbres ?? [];
+  const defaultTtsVoice = config?.runtime?.voice?.ttsVoice ?? '';
+  const showTimbreSelect = serverVoiceEnabled && !useBrowserSpeechApi && config?.voiceSettings?.asrProvider === 'local' && timbres.length > 0;
+  const timbreValue = timbres.some((item) => item.name === selectedTtsTimbre) ? selectedTtsTimbre : '';
 
   return (
     <div className="modal-overlay">
@@ -97,6 +105,24 @@ export function SettingsPage({
               </label>
             </div>
             <p className="hint">开启后,收到任务完成通知时会自动播放顶部语音图标对应的播报内容。</p>
+            {showTimbreSelect && (
+              <div className="settings-option-row">
+                <span className="settings-option-label">音色</span>
+                <select
+                  className="settings-select"
+                  value={timbreValue}
+                  onChange={(e) => onTtsTimbreChange(e.target.value)}
+                  aria-label="音色"
+                >
+                  <option value="">默认音色{defaultTtsVoice ? ` (${getTimbreLabel(timbres, defaultTtsVoice)})` : ''}</option>
+                  {timbres.map((timbre) => (
+                    <option value={timbre.name} key={timbre.name}>
+                      {timbre.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="voice-command-summary" aria-label="语音指令别名">
               {(config?.voiceSettings?.commands ?? []).map((command) => (
                 <p className="voice-command-line" key={command.id}>
@@ -122,6 +148,10 @@ export function SettingsPage({
       </div>
     </div>
   );
+}
+
+function getTimbreLabel(timbres: { name: string; label: string }[], name: string): string {
+  return timbres.find((item) => item.name === name)?.label ?? name;
 }
 
 function formatKeyboard(value: string): string {

@@ -50,6 +50,7 @@ export interface RuntimeSettings {
     ttsRate?: string;
     ttsVolume?: string;
     ttsPitch?: string;
+    timbres?: VoiceTimbre[];
   };
   webPush?: {
     publicKey?: string;
@@ -58,6 +59,11 @@ export interface RuntimeSettings {
   hooks?: {
     summaryMaxChars?: number;
   };
+}
+
+export interface VoiceTimbre {
+  name: string;
+  label: string;
 }
 
 interface SettingsDoc {

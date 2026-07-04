@@ -70,6 +70,7 @@ export interface CliConfig {
 }
 
 export interface ConfigDoc {
+  runtime?: RuntimeSettings;
   cliConfigs: CliConfig[];
   voiceSettings?: {
     useServerVoice: boolean;
@@ -77,6 +78,18 @@ export interface ConfigDoc {
     commands: VoiceCommandConfig[];
     refinePrompt: VoiceRefinePromptConfig;
   };
+}
+
+export interface RuntimeSettings {
+  voice?: {
+    ttsVoice?: string;
+    timbres?: VoiceTimbre[];
+  };
+}
+
+export interface VoiceTimbre {
+  name: string;
+  label: string;
 }
 
 export interface VoiceCommandConfig {

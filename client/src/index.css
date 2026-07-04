@@ -1182,6 +1182,18 @@ textarea {
   cursor: not-allowed;
 }
 
+.settings-select {
+  min-width: 160px;
+  max-width: 220px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+
 .speech-test-modal {
   max-width: 620px;
 }

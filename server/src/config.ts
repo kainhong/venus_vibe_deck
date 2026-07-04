@@ -55,6 +55,7 @@ export const config = {
     ttsRate: readString('VOICE_TTS_RATE', runtime.voice?.ttsRate, '+0%'),
     ttsVolume: readString('VOICE_TTS_VOLUME', runtime.voice?.ttsVolume, '+0%'),
     ttsPitch: readString('VOICE_TTS_PITCH', runtime.voice?.ttsPitch, '+0Hz'),
+    timbres: runtime.voice?.timbres ?? [],
   },
   webPush: {
     publicKey: readString('WEB_PUSH_PUBLIC_KEY', runtime.webPush?.publicKey, ''),

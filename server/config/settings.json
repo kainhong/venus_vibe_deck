@@ -42,7 +42,25 @@
       "ttsSampleRate": 24000,
       "ttsRate": "+0%",
       "ttsVolume": "+0%",
-      "ttsPitch": "+0Hz"
+      "ttsPitch": "+0Hz",
+      "timbres":[
+        {
+          "name": "cosyvoice-v3.5-plus-bailian-c91dbd804e184104b4347f625d313af9",
+          "label": "小A"
+        },{
+          "name": "cosyvoice-v3.5-plus-bailian-4baab8550dca42b09996ea9f92130702",
+          "label": "小Lin"
+        }, {
+          "name": "cosyvoice-v3.5-plus-bailian-25077fbc0dee48e78b697cdebb08229d",
+          "label": "摩斯"
+        }, {
+          "name": "cosyvoice-v3.5-plus-bailian-c700d6a1284d48d49ee7098b06825c15",
+          "label": "凯瑞甘"
+        }, {
+          "name": "zh-CN-XiaoxiaoNeural",
+          "label": "小小"
+        }
+      ]
     },
     "webPush": {
       "publicKey": "",

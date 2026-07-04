@@ -173,9 +173,9 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, manag
 
     if (pathname === '/api/tts') {
       if (method !== 'POST') return respond(req, res, startedAt, 405, { error: 'method not allowed' });
-      const { text } = await readBody<{ text: string }>(req, 64 * 1024);
+      const { text, voice } = await readBody<{ text: string; voice?: string }>(req, 64 * 1024);
       if (!text || !text.trim()) return respond(req, res, startedAt, 400, { error: 'text required' });
-      const audio = await synthesize(text);
+      const audio = await synthesize(text, voice);
       if (!audio) return respond(req, res, startedAt, 503, { error: 'tts unavailable or disabled' });
       logger.info('tts response sent', { textLength: text.length, audioBytes: audio.length, durationMs: Date.now() - startedAt });
       res.writeHead(200, {
