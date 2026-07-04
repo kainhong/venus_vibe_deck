@@ -59,6 +59,10 @@
         }, {
           "name": "zh-CN-XiaoxiaoNeural",
           "label": "小小"
+        },
+        {
+          "name":"cosyvoice-v3.5-plus-bailian-877a1dd0a1044b349fb7d42fe05f18a8",
+          "label":"星门"
         }
       ]
     },
